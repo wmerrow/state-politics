@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1615069619755.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3856237620",
+    "id" : "9423A611",
+    "lastKnownWriteTime" : 1615766573,
+    "last_content_update" : 1616283068150,
+    "path" : "~/Documents/Dev/INFO_696/final_project/data_preparation.R",
+    "project_path" : "data_preparation.R",
+    "properties" : {
+        "cursorPosition" : "285,0",
+        "scrollLine" : "281"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
