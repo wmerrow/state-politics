@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Visualizing State Politics</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <h1>Headline</h1>
+
+  <div id='container' class='container-1'>
+    <div id='graph'></div>
+    <div id='sections'>
+
+      <!-- step 1 -->
+      <div>
+        <h3>Connect text and graphics</h3>
+        <span class='mono'>graph-scroll</span> 
+        takes a selection of explanatory text sections and dispatches <span class='mono'>active</span> events as different sections are scrolled into to view. These active events are used to update a graph's state.
+        <pre>
+  d3.graphScroll()
+    .sections(d3.selectAll('#sections > div'))
+    .on('active', function(i){
+      console.log(i + 'th section active') })
+        </pre>
+
+      </div>
+
+      <!-- step 2 -->
+      <div>
+        <h3>Highlight active text</h3>
+        The top most text section scrolled into view is classed <span class='mono'>graph-scroll-active</span>. This makes it easy to highlight the active section with css: 
+  <pre>
+  #sections > div{
+    opacity: .3
+  } 
+
+  #sections div.graph-scroll-active{
+    opacity: 1;
+  }
+  </pre>
+      </div>
+
+      <!-- step 3 -->
+      <div>
+        <h3>Headers and footers</h3>
+        To support headers and intro images/text, the explanatory text and graphic are wrapped with a container element:    
+  <pre>
+  &lt;h1&gt;Page Title&lt;/div&gt;
+  &lt;div id='container'&gt;
+    &lt;div id='graph'&gt;&lt;/div&gt;
+    &lt;div id='sections'&gt;
+      &lt;div&gt;Section 0&lt;/div&gt;
+      &lt;div&gt;Section 1&lt;/div&gt;
+      &lt;div&gt;Section 2&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;h1&gt;Footer&lt;/h1&gt;
+  </pre>
+
+      and passed to <span class='mono'>graphScroll</span>
+
+  <pre>
+  d3.graphScroll()
+    .graph(d3.select('#graph'))
+    .container(d3.select('#container'))
+  <pre>
+      </div>
+
+      <!-- step 4 -->
+      <div>
+        <h3>Sticky graph</h3>
+        When the graph starts to scroll out of view, <span class='mono'>postiion: sticky</span> keeps the graph element stuck to the top of the page while the text scrolls by.
+  <pre>
+  #container{
+    position: relative;
+  }
+
+  #sections{
+    width: 340px;
+  }
+
+  #graph{
+    margin-left: 40px;
+    width: 500px;
+    position: sticky;
+    top: 0px;
+    float: right;
+  }
+  </pre>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- interlude -->
+  <h1>
+    Multiple graphs work too!
+  </h1>
+
+  <!-- section 2 -->
+  <div id='container' class='container-2'>
+    <div id='graph'></div>
+
+    <div id='sections'><div>
+
+  </div>
+
+
+
+  <script src="d3v4+jetpack.js"></script>
+  <script src="graph-scroll.js"></script>
+  <script src="charts.js"></script>
+
+</body>
