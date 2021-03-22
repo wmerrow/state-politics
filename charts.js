@@ -32,14 +32,17 @@ d3.queue()
 
 
 
-
   var oldWidth = 0
+
   function render(){
+  
     if (oldWidth == innerWidth) return
     oldWidth = innerWidth
 
-    var width = height = d3.select('#graph').node().offsetWidth
-    var r = 40
+    var width = height = d3.select('#graph').node().offsetWidth;
+    var r = 10;
+    var nodePadding = 1.5;
+    var textSize = 14;
 
 
     if (innerWidth <= 925){
@@ -49,14 +52,78 @@ d3.queue()
 
     // return console.log(width, height)
 
+
+    // size scale for state bubbles
+    var size = d3.scaleSqrt()
+      .domain([0, 39368078])
+      .range([0,55]);  // largest circle will be 55px wide
+
+    // color scale
+    var color = d3.scaleOrdinal()
+      .domain(["NA","full_dem", "lean_dem", "lean_rep", "full_rep"])
+      .range(['#dddddd','#2166ac','#92c5de','#f4a582','#b2182b']);
+
+
+    // SECTION 1
+
     var svg = d3.select('#graph').html('')
       .append('svg')
         .attrs({width: width, height: height})
 
-    var circle = svg.append('circle')
-        .attrs({cx: 0, cy: 0, r: r})
+    // var circle = svg.append('circle')
+    //     .attrs({cx: 0, cy: 0, r: r})
 
-    var colors = ['red', 'purple', 'steelblue', 'pink', 'black']
+    // bubble chart
+
+    // Initialize the circles: all located at the center of the svg area
+    var node = svg.append("g")
+      .selectAll("circle")
+      .data(data21)
+      .enter()
+      .append("circle")
+        .attr("r", function(d) { return size(d.pop); })
+        .attr("cx", width / 2)
+        .attr("cy", height / 2)
+        .style("fill", function(d){return color(d.government_cont_text)});
+
+    var label = svg.append("g")
+      .selectAll("text")
+      .data(data21)
+      .enter()
+      .append("text")
+        .attr("x", width / 2)
+        .attr("y", height / 2)
+        .attr("class", "label")
+        .style("font-size", textSize)
+        .text(function(d){return d.state_abbrev});
+
+    // Features of the forces applied to the nodes:
+    var simulation = d3.forceSimulation()
+        .force("center", d3.forceCenter().x(width / 2).y(height / 2)) // Attraction to the center of the svg area
+        .force("charge", d3.forceManyBody().strength(0.5)) // Nodes are attracted one each other of value is > 0
+        .force("collide", d3.forceCollide().strength(.1).radius(function(d){ return size(d.pop) + nodePadding; }).iterations(1)) // Force that avoids circle overlapping
+
+    // Apply these forces to the nodes and update their positions.
+    // Once the force algorithm is happy with positions ('alpha' value is low enough), simulations will stop.
+    simulation
+        .nodes(data21)
+        .on("tick", function(d){
+          node
+              .attr("cx", function(d){ return d.x; })
+              .attr("cy", function(d){ return d.y; })
+          label
+              .attr("x", function(d){ return d.x; })
+              .attr("y", function(d){ return d.y + textSize / 2 - 2; })
+        });
+
+    // simulation
+    //     .nodes(data21)
+    //     .on("tick", function(d){
+    //       label
+    //           .attr("x", function(d){ return d.x; })
+    //           .attr("y", function(d){ return d.y; })
+    //     });
+    
     var gs = d3.graphScroll()
         .container(d3.select('.container-1'))
         .graph(d3.selectAll('container-1 #graph'))
@@ -64,17 +131,19 @@ d3.queue()
         .sections(d3.selectAll('.container-1 #sections > div'))
         // .offset(innerWidth < 900 ? innerHeight - 30 : 200)
         .on('active', function(i){
-          var pos = [ {cx: width - r, cy: r},
-                      {cx: r,         cy: r},
-                      {cx: width - r, cy: height - r},
-                      {cx: width/2,   cy: height/2} ][i]
+          // var pos = [ {cx: width - r, cy: r},
+          //             {cx: r,         cy: r},
+          //             {cx: width - r, cy: height - r},
+          //             {cx: width/2,   cy: height/2} ][i]
           
-          circle.transition().duration(1000)
-              .attrs(pos)
-            .transition()
-              .style('fill', colors[i])
+          // circle.transition().duration(1000)
+          //     .attrs(pos)
+          //     .transition()
+          //     .style('fill', colors[i])
         })
 
+
+    // SECTION 2
 
     var svg2 = d3.select('.container-2 #graph').html('')
       .append('svg')
@@ -102,13 +171,15 @@ d3.queue()
 
           path.transition().duration(1000)
               .attr('d', dArray[i])
-              .style('fill', colors[i])
+             // .style('fill', colors[i])
         })
 
     d3.select('#source')
         .styles({'margin-bottom': window.innerHeight - 450 + 'px', padding: '100px'})
   }
+  
   render()
+
   d3.select(window).on('resize', render)
 
 

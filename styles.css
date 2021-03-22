@@ -85,3 +85,8 @@ circle{
 svg{
   background-color: #eee;
 }
+
+.label{
+  fill: #111111;
+  text-anchor: middle;
+}

@@ -147,6 +147,12 @@ str(pc2)
 # combine pc1 and pc2
 pc <- rbind(pc1, pc2)
 
+# add text field for gov control
+pc$government_cont_text[pc$government_cont > 0.99] <- "full_dem"
+pc$government_cont_text[pc$government_cont < 0.01] <- "full_rep"
+pc$government_cont_text[pc$government_cont < 0.8 & pc$government_cont > 0.5] <- "lean_dem"
+pc$government_cont_text[pc$government_cont > 0.2 & pc$government_cont < 0.5] <- "lean_rep"
+### need to fix above to handle .83s and .16s and .5s
 
 # POPULATION (1969-2010)
 
@@ -244,8 +250,8 @@ str(pv)
 
 # IDEOLOGY
 
-test <- read.dta(file = "data/source/ideology/caughey_warshaw_summary.dta")
-str(test)
+# test <- read.dta(file = "data/source/ideology/caughey_warshaw_summary.dta")
+# str(test)
 
 
 # COMBINE AND OUTPUT
@@ -260,6 +266,14 @@ str(all)
 
 # sort by year and state
 all <- arrange(all, state, year)
+
+# state abbreviations
+sa <- read.csv(file = "data/source/abbreviations/state_abbreviations.csv", header = TRUE, stringsAsFactors = FALSE)
+str(sa)
+
+# join with state abbreviations
+all <- left_join(all, sa, by = "state")
+str(all)
 
 # output
 write.csv(all, "data/output/party_control.csv", row.names = FALSE)
