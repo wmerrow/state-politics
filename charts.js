@@ -41,7 +41,7 @@ d3.queue()
 
     var width = height = d3.select('#graph').node().offsetWidth;
     var r = 40;
-    var textSize = 14;
+    var textSize = 10;
     var nodePadding = 2;
 
 
@@ -52,21 +52,32 @@ d3.queue()
 
     // return console.log(width, height)
 
-  // color scale
-  var color = d3.scaleOrdinal()
-    .domain(['NA', 'full_dem', 'lean_dem', 'lean_rep', 'full_rep'])
-    .range(['#dddddd', '#4393c3', '#92c5de', '#f4a582', '#d6604d']);
+    // color scale
+    var color = d3.scaleOrdinal()
+      .domain(['NA', 'full_dem', 'lean_dem', 'lean_rep', 'full_rep'])
+      .range(['#dddddd', '#4393c3', '#92c5de', '#f4a582', '#d6604d']);
 
-  // size scale
-  var size = d3.scaleSqrt()
-    .domain([0, 39368078])
-    .range([0, 45]); // max radius
+    // size scale
+    var size = d3.scaleSqrt()
+      .domain([0, 39368078])
+      .range([0, 30]); // max radius
 
-  // x scale
-  var x = d3.scaleOrdinal()
-    .domain(['NA', 'full_dem', 'lean_dem', 'lean_rep', 'full_rep'])
-    .range([width * 0.5, width * 0.2, width * 0.4, width * 0.6, width * 0.8]);
-
+    // x scale for control
+    var xContScale = d3.scaleOrdinal()
+      .domain(['NA', 'full_dem', 'lean_dem', 'lean_rep', 'full_rep'])
+      .range([width * 0.5, width * 0.2, width * 0.4, width * 0.6, width * 0.8]);
+    // x scale for pres vote
+    var xVoteScale = d3.scaleLinear()
+      .domain([0.2, 0.8])
+      .range([width * 0, width * 1]);
+    // x scale for longitude
+    var xLonScale = d3.scaleLinear()
+      .domain([0.2, 0.8])
+      .range([width * 0, width * 1]);
+    // y scale for latitude
+    var yLatScale = d3.scaleLinear()
+      .domain([0.2, 0.8])
+      .range([width * 0, width * 1]);
 
     // SECTION 1
 
@@ -94,10 +105,12 @@ d3.queue()
       .text(d=> d.state_abbrev)
       .attr("class", "label")
       .style("text-anchor", "middle")
+      .style("font-size", textSize)
       .attr("x", width / 2)
       .attr("y", height / 2);
 
 
+    // GRAPH SCROLL WITH LISTENER
 
     var gs = d3.graphScroll()
         .container(d3.select('.container-1'))
@@ -106,15 +119,19 @@ d3.queue()
         .sections(d3.selectAll('.container-1 #sections > div'))
         // .offset(innerWidth < 900 ? innerHeight - 30 : 200)
         .on('active', function(i){
-            // var x = 0;
-            // var y = 0;
+          
+          // steps: (TURN WORD WRAP OFF FOR EASIER VIEW)
+          //              0                         1                 2                         3
+          var xScales =   [xContScale,              xVoteScale,       xContScale,               xVoteScale];
+          var xInputs =   ['government_cont_text',  'pres_vote_rep',  'government_cont_text',   'pres_vote_rep'];
 
           // Features of the forces applied to the nodes:
           var simulation = d3.forceSimulation()
-              .force("x", d3.forceX().strength(0.5).x( function(d){ return x(d.government_cont_text) } ))
-              .force("y", d3.forceY().strength(0.1).y( height/2 ))
+              // x positions, depending on step
+              .force("x", d3.forceX().strength(0.01).x( function(d){ return xScales[i](d[xInputs[i]]) }))
+              .force("y", d3.forceY().strength(0.1).y( height / 2 ))
               .force("center", d3.forceCenter().x(width / 2).y(height / 2)) // Attraction to the center of the svg area
-              .force("charge", d3.forceManyBody().strength(0.5)) // Nodes are attracted one each other of value is > 0
+              .force("charge", d3.forceManyBody().strength(0)) // Nodes are attracted one each other of value is > 0
               .force("collide", d3.forceCollide().strength(0.1).radius(d=> size(d.pop) + nodePadding).iterations(1)) // Force that avoids circle overlapping
 
           // Apply these forces to the nodes and update their positions.
@@ -164,12 +181,14 @@ d3.queue()
 
     d3.select('#source')
         .styles({'margin-bottom': window.innerHeight - 450 + 'px', padding: '100px'})
-  }
+  
+  } // end render function
+  
+  // initial render
   render()
+  
+  // listener to render on resize
   d3.select(window).on('resize', render)
-
-
-
 
 }); // end d3.csv
 
