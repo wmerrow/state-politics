@@ -43,9 +43,10 @@ h1{
   float: right;
 }
 
-@media (max-width: 925px)  {
+@media (max-width: 2925px)  {
   #graph{
     width: 100%;
+    height: 500px;
     margin-left: 0px;
     float: none;
   }

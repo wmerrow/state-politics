@@ -275,6 +275,22 @@ str(sa)
 all <- left_join(all, sa, by = "state")
 str(all)
 
+# join with voting rights bill counts
+vr <- read.csv(file = "data/source/voting_rights/voting_rights_brennan_bills.csv", header = TRUE, stringsAsFactors = FALSE)
+str(vr)
+
+# join with voting rights bill counts
+all <- left_join(all, vr, by = "state_abbrev")
+str(all)
+
+# state x y positions
+sp <- read.csv(file = "data/source/xy_positions/state_xy.csv", header = TRUE, stringsAsFactors = FALSE)
+str(sp)
+
+# join with state x y positions
+all <- left_join(all, sp, by = "state")
+str(all)
+
 # output
 write.csv(all, "data/output/party_control.csv", row.names = FALSE)
 

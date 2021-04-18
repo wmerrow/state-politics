@@ -9,41 +9,66 @@
 </head>
 
 <body>
+  
+  <figure>
+    <img src="img/nh.jpg" alt="A photo of the New Hampshire state house">
+    <figcaption id="caption">The New Hampshire state house. <span class="attribution">tktk / Flickr.</span></figcaption>
+  </figure>
 
-  <h1>Headline</h1>
+  <h1>How Republicans Keep Winning at the State Level, and Why It Matters</h1>
 
-  <h2>
-    section 1
-  </h2>
+  <div id="bylineContainer">
+    <p class="byline">By Will Merrow</p>
+    <p class="byline">Projects in Information Visualization</p>
+    <p class="byline">Spring 2021</p>
+  </div>
 
-  <h3>intro text</h3>
+  <p>New Hampshire’s 2020 election results look a little odd. The state voted for the Democratic nominee, as it has done in the past five presidential elections, and reelected Democrats to the House and Senate, maintaining an entirely blue congressional delegation as expected. But the state house is now deep red: the Republican governor cruised to an easy reelection, and the GOP took back control of both chambers in the state legislature.</p>
+  <p>Despite being shut out of the presidency, house, and senate, Republicans have more control than Democrats at the state level:</p>
 
   <div id='container' class='container-1'>
     <div id='graph'></div>
     <div id='sections'>
 
+      <!-- step 0 -->
+      <div>
+        <p>X states, amounting to XX% of the U.S. population, are controlled by a conservative “trifecta”, where Republicans control all three institutions of state government: the governorship, state senate, and state assembly or house. Democratic trifectas govern only Y states, amounting to YY% of the country. In the remaining states, control is split, but Republicans have an edge in most cases, controlling two of the three institutions.</p>
+      </div>
+
       <!-- step 1 -->
       <div>
-        <h3>Map of 2021 control</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        <p>The Republican advantage may not seem impressive at first: this is a familiar map, with bluer states on the coasts. But getting to this point was a multi-generational GOP project.</p>
       </div>
 
       <!-- step 2 -->
       <div>
-        <h3>Chart of 2021 control</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        <p>After the Watergate scandal in the 1970s, Democrats swept to power in state houses across the country, winning trifectas in X states.</p>
       </div>
 
       <!-- step 3 -->
       <div>
-        <h3>Chart of 2021 control vs presidential margin</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        <p>Over the next two decades, Republicans made uneven gains, then broke through in the “Republican Revolution” of 1994. Tktk about how Republicans managed to do this tktk.</p>
       </div>
 
       <!-- step 4 -->
       <div>
-        <h3>tktk</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        <p>In the 2000s, Democrats regained some ground, and at the start of Obama’s presidency still enjoyed a significant advantage in state houses.</p>
+      </div>
+
+      <!-- step 5 -->
+      <div>
+        <p>Seeing the importance of the states, Republicans xxxx. The Republican State Leadership Committee, the GOP’s fundraising armtktk focused on the state level, invested $30 million, compared to X spent by its Democratic counterpart.</p>
+      </div>
+
+      <!-- step 6 -->
+      <div>
+        <p>The result was an electoral massacre, with the GOP flipping X chambers as part of the 2010 wave.</p>
+        <p>This gave Republicans trifectas in x states amounting to xx% of the population. Crucially, their victory happened just before the 2011 redistricting process, meaning each trifecta immediately had the chance to new district boundaries that would last until 2020.</p>
+      </div>
+
+      <!-- step 7 -->
+      <div>
+        <p>In 2020, hoping for a blue wave, Democrats invested heavily in state-level races, but had little to show for it, with the map largely unchanged since 2010.</p>
       </div>
 
     </div>
@@ -67,6 +92,7 @@
 
   <script src="d3v4+jetpack.js"></script>
   <script src="graph-scroll.js"></script>
+  <script type="text/javascript" src= "d3-simple-slider.js"></script>
   <script src="charts.js"></script>
 
 </body>
