@@ -30,11 +30,7 @@ d3.queue()
   // filter to 2021
   var data21 = data_all
     .filter(({year}) => year === 2021);
-  //console.log(data21); 
 
-  var data75 = data_all
-    .filter(({year}) => year === 1975);
-  //console.log(data75); 
 
   var oldWidth = 0
 
@@ -91,22 +87,85 @@ d3.queue()
     // dummy scale
     var dummyScale = d3.scaleLinear()
       .domain([-1000, 1000])
-      .range([300, 300]);
+      .range([200, 200]);
 
     // SECTION 1
 
+    // add svg
     var svg = d3.select('#graph').html('')
       .append('svg')
         .attr('width', width)
         .attr('height', height)
         .attr('id', 'mySvg');
 
+    // // slider dimensions
+    // var sliderSize = {
+    //     w: width * 0.75,
+    //     h: 50
+    //   };
+    // var sliderMargin = 15;
+    // // slider min/max
+    // var sliderMin = 1970;
+    // var sliderMax = 2021;
+    // // slider increment
+    // var increment = 1;
+    // // array of integers for slider ticks
+    // var sliderTicks = [];
+    // for (var i = sliderMin; i <= sliderMax; i = i + increment * 5) {
+    //   sliderTicks.push(i);
+    // };
+
+    // // define the slider
+    // var slider = d3.sliderTop()
+    //   .min(sliderMin)
+    //   .max(sliderMax)
+    //   .default(0)
+    //   .step(.5) // step between selectable values
+    //   .width(sliderSize.w - sliderMargin * 2)
+    //   // custom slider symbol
+    //   .handle(
+    //     d3.symbol()
+    //       .type(d3.symbolCircle)
+    //       .size(150)()
+    //     )
+    //   .tickValues(sliderTicks)
+    //   .tickPadding(-3)
+    //   // tick format
+    //   .tickFormat(d3.format("d"))
+    //   // remove minus signs and append +D or +R, or change to Even
+    //   // .tickFormat((function (v) {
+    //   //     if (v == 0) {
+    //   //       return 'Even';
+    //   //     } else if (v < 0) {
+    //   //       return 'D +' + Math.abs(v); 
+    //   //     } else if (v > 0) {
+    //   //       return 'R +' + Math.abs(v); 
+    //   //     };
+    //   // }))
+    //   .displayValue(true)
+    //   // onchange, pass section and slider value to update function to update graphics
+    //   .on('onchange', function (value) {
+    //     update(value);
+    //   });
+
+    // // add slider title
+    // // d3.select('#introSlider')
+    // //   .append('text')
+    // //   .attr('class', 'sliderTitle')
+    // //   .text('Scenario')
+    // //   .attr('transform', 'translate(' + (sliderWidth) / 2 + ', 21)');
+
+    // svg.append('g')
+    //   .attr('transform', 'translate(' + sliderMargin + ',' + (sliderSize.h - 10) + ')')
+    //   .call(slider);
+
     // set up basemap
     var basemap = d3.select('#mySvg').append("svg:image")
       .attr("xlink:href", "img/us_map.svg")
       .attr("width", width) // changed from "width" (to set based on height)
       .attr("x", 0) //margin.left)
-      .attr("y", 0); //margin.top);
+      .attr("y", 0)
+      .style('display', 'none'); //margin.top);
 
     // add g (after basemap so it goes on top)
     var g = svg.append('g');
@@ -123,6 +182,7 @@ d3.queue()
       // if filtered dataset has more circles than already existing, transition new ones in
       var new_circles = circles.enter()
         .append("circle")
+        .attr('class', 'myCircle')
         .attr("r", d=> size(d.pop))
         .attr('cx', width/2)
         .attr('cy', height/2)
@@ -135,28 +195,60 @@ d3.queue()
         .attr('cy', d=> yLatScale(d.state_y))
         .style("fill", d=> color(d.government_cont_text));
  
-      // set up labels
-      var label = g.selectAll("text")
-        .data(data21)
-        .enter()
-        .append("text")
-        .text(d=> d.state_short)
-        .attr("class", "label")
-        .style("text-anchor", "middle")
-        .style("font-size", textSize)
-        .attr('x', d=> xLonScale(d.state_x))
-        .attr('y', d=> yLatScale(d.state_y));
+      // // set up labels
+      // var circleLabel = g.selectAll("text")
+      //   .data(data21)
+      //   .enter()
+      //   .append("text")
+      //   .text(d=> d.state_short)
+      //   .attr("class", "label")
+      //   .style("text-anchor", "middle")
+      //   .style("font-size", textSize)
+      //   .attr('x', d=> xLonScale(d.state_x))
+      //   .attr('y', d=> yLatScale(d.state_y));
 
     }; // end drawPlot
 
     // update plot with specified year
-    function update(myYear) {
+    function update(newYear) {
       // filter data set and redraw plot
       var newData = data_all
-        .filter(({year}) => year === myYear);
+        .filter(({year}) => year === newYear);
 
       drawPlot(newData);
     };
+
+
+
+
+
+    // set up circles: all located at the center of the svg area
+    var node = svg.append("g")
+      .selectAll("node")
+      .data(data21)
+      .enter()
+      .append("circle")
+      .attr('class', 'myNode')
+      .attr("r", d=> size(d.pop))
+      .attr("cx", width / 2)
+      .attr("cy", height / 2)
+      .style("fill", d=> color(d.government_cont_text));
+
+    var label = svg.append("g")
+      .selectAll("labelText")
+      .data(data21)
+      .enter()
+      .append("text")
+      .text(d=> d.state_abbrev)
+      .attr("class", "label")
+      .style("text-anchor", "middle")
+      .style("font-size", textSize)
+      .attr('x', width / 2)
+      .attr('y', height / 2);
+
+
+
+
 
 
 
@@ -196,80 +288,86 @@ d3.queue()
         .on('active', function(i){
           
           // STEPS (TURN WORD WRAP OFF FOR EASIER VIEW)
-          //              0             1             2                       3                        4
+          //              0                         1             2                       3                        4
           
-          var xScales =   [xLonScale,   xLonScale,    xContScale,             xVoteScale,              xContScale];
-          var xInputs =   ['state_x',   'state_x',    'government_cont_text', 'pres_vote_rep',         'government_cont_text'];
-          var yScales =   [yLatScale,   yLatScale,    dummyScale,             dummyScale,              dummyScale];
-          var yInputs =   ['state_y',   'state_y',    'state_y',              'state_y',               'state_y']; // figure out why /4 instead of /2
-          var map =       ['TRUE',      'TRUE',       'TRUE',                 'TRUE',                  'TRUE'];
-          var dataYear =  [2021,        1975,         1993,                   1995,                    2021];
+          var xScales =   [xContScale,              xLonScale,   xLonScale,    xContScale,             xVoteScale,              xContScale];
+          var xInputs =   ['government_cont_text',  'state_x',   'state_x',    'government_cont_text', 'pres_vote_rep',         'government_cont_text'];
+          var yScales =   [dummyScale,              yLatScale,   yLatScale,    dummyScale,             dummyScale,              dummyScale];
+          var yInputs =   [0,                       'state_y',   'state_y',    'state_y',              'state_y',               'state_y']; // figure out why /4 instead of /2
+          var map =       ['FALSE',                 'TRUE',      'TRUE',       'TRUE',                 'TRUE',                  'FALSE'];
+          var dataYear =  [2021,                    2021,        1975,         1993,                   1995,                    2021];
 
-          console.log(dataYear[i]);
+          // update bubble color based on year
           update(dataYear[i]);
           
           // node
-          //   .data(data);
-            // .attr("cx", function(d){ return d.x; })
-            // .attr("cy", function(d){ return d.y; })
+          //   .data(data21)
+          //   .attr("cx", function(d){ return d.x; })
+          //   .attr("cy", function(d){ return d.y; })
 
-          // // Features of the forces applied to the nodes
-          // var simulation = d3.forceSimulation()
-          //   // x positions depend on step
-          //   .force("x", d3.forceX().strength(.1).x( function(d){ 
-          //     return xScales[i](d[xInputs[i]]) 
-          //   }))
-          //   .force("y", d3.forceY().strength(.1).y( function(d){
-          //     return yScales[i](d[yInputs[i]]) 
-          //   }))
-          //   .force("center", d3.forceCenter().x(width / 2).y(height / 2)) // Attraction to the center of the svg area
-          //   .force("charge", d3.forceManyBody().strength(10)) // Nodes are attracted one each other of value is > 0
-          //   .force("collide", d3.forceCollide().strength(0.2).radius(d=> size(d.pop) + nodePadding).iterations(1)) // Force that avoids circle overlapping
+          // Features of the forces applied to the nodes
+          var simulation = d3.forceSimulation()
+            // x positions depend on step
+            .force("x", d3.forceX().strength(.1).x( function(d){ 
+              return xScales[i](d[xInputs[i]]) 
+            }))
+            .force("y", d3.forceY().strength(.1).y( function(d){
+              return yScales[i](0)//(d[yInputs[i]])
+            }))
+            .force("center", d3.forceCenter().x(width / 2).y(height / 2)) // Attraction to the center of the svg area
+            .force("charge", d3.forceManyBody().strength(10)) // Nodes are attracted one each other of value is > 0
+            .force("collide", d3.forceCollide().strength(0.2).radius(d=> size(d.pop) + nodePadding).iterations(1)) // Force that avoids circle overlapping
 
-          // // Apply these forces to the nodes and update their positions.
-          // // Once the force algorithm is happy with positions ('alpha' value is low enough), simulations will stop.
-          // simulation
-          //   .nodes(data21)
-          //   .on("tick", function(d){
+          // Apply these forces to the nodes and update their positions.
+          // Once the force algorithm is happy with positions ('alpha' value is low enough), simulations will stop.
+          simulation
+            .nodes(data21)
+            .on("tick", function(d){
               
-          //     // for steps 0 and 2, fix positions of nodes so they aren't influenced by other forces
-          //     /// need to figure out how to include transitions
-          //     if (i === 0) {
-          //       node.each(function(dd){
-          //         dd.x = xScales[i](dd[xInputs[i]]);
-          //         dd.y = yScales[i](dd[yInputs[i]]);
-          //       }) 
-          //     } else if (i === 1) {
-          //       node.each(function(dd){
-          //         dd.x = dd.x;
-          //         dd.y = dd.y;
-          //       }) 
-          //     } else if (i === 2) {
-          //       node.each(function(dd){
-          //         dd.x = xScales[i](dd[xInputs[i]]);
-          //         dd.y = dd.y
-          //       }) 
-          //     } else if (i === 1) {
-          //       node.each(function(dd){
-          //         dd.x = dd.x;
-          //         dd.y = dd.y;
-          //       }) 
-          //     }
+              // for steps 0 and 2, fix positions of nodes so they aren't influenced by other forces
+              /// need to figure out how to include transitions
+              // if (i === 0) {
+              //   node.each(function(dd){
+              //     dd.x = xScales[i](dd[xInputs[i]]);
+              //     dd.y = yScales[i](dd[yInputs[i]]);
+              //   }) 
+              // } else if (i === 1) {
+              //   node.each(function(dd){
+              //     dd.x = dd.x;
+              //     dd.y = dd.y;
+              //   }) 
+              // } else if (i === 2) {
+              //   node.each(function(dd){
+              //     dd.x = xScales[i](dd[xInputs[i]]);
+              //     dd.y = dd.y
+              //   }) 
+              // } else if (i === 1) {
+              //   node.each(function(dd){
+              //     dd.x = dd.x;
+              //     dd.y = dd.y;
+              //   }) 
+              // }
               
 
-          //     node
-          //         .attr("cx", function(d){ return d.x; })
-          //         .attr("cy", function(d){ return d.y; })
-          //     label
-          //         .attr("x", function(d){ return d.x; })
-          //         .attr("y", function(d){ return d.y + textSize / 2 - 2; }) // adds half of text size to vertically center in bubbles
-          //   });
+              node
+                  .attr("cx", function(d){ return d.x; })
+                  .attr("cy", function(d){ return d.y; })
+              label
+                  .attr("x", function(d){ return d.x; })
+                  .attr("y", function(d){ return d.y + textSize / 2 - 2; }) // adds half of text size to vertically center in bubbles
+            });
 
           // basemap - show or hide depending on step
           if (map[i] === 'FALSE') {
             basemap.style('display', 'none');
+            d3.selectAll('.myCircle').style('display', 'none');
+            node.style('opacity', 1);
+            label.style('opacity', 1);
           } else if (map[i] === 'TRUE') {
             basemap.style('display', 'block');
+            d3.selectAll('.myCircle').style('display', 'block');
+            node.style('opacity', 0);
+            label.style('opacity', 0);
           };
 
         }); // end 'active' listener
