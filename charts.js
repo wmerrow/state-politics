@@ -49,7 +49,7 @@ d3.queue()
 
     // 700 x 440 is roughly the map aspect ratio so bubbles end up centered in states
     var width = 700;
-    var height = 440;
+    var height = 450;
 
     var r = 40;
     var textSize = 10;
@@ -75,8 +75,8 @@ d3.queue()
       .range([height * 0, height * 1]);
     // x scale for control
     var xContScale = d3.scaleOrdinal()
-      .domain(['NA', 'full_dem', 'lean_dem', 'lean_rep', 'full_rep'])
-      .range([width * 0.5, width * 0.2, width * 0.4, width * 0.6, width * 0.8]);
+      .domain( ['NA',       'full_dem',    'lean_dem',   'lean_rep',   'full_rep'])
+      .range(  [width * 0.5,  width * 0.15,  width * 0.4,  width * 0.6,  width * 0.85]);
     // x scale for pres vote
     var xVoteScale = d3.scaleLinear()
       .domain([0.2, 0.8])
@@ -222,7 +222,8 @@ d3.queue()
 
 
 
-    // set up circles: all located at the center of the svg area
+    // set up nodes and labels: all located at the center of the svg area to start
+    
     var node = svg.append("g")
       .selectAll("node")
       .data(data21)
@@ -246,6 +247,70 @@ d3.queue()
       .attr('x', width / 2)
       .attr('y', height / 2);
 
+    // var categories = [
+    //     {
+    //       'cat': 'full_dem',
+    //       'label': "Full Dem control"
+    //     },
+    //     {
+    //       'cat': 'lean_dem',
+    //       'label': "Lean Dem control"
+    //     },
+    //     {
+    //       'cat': 'lean_rep',
+    //       'label': "Lean Rep control"
+    //     },
+    //     {
+    //       'cat': 'full_rep',
+    //       'label': "Full Rep control"
+    //     }
+    //   ];
+
+    // console.log(categories);
+
+    // var headers = svg.append("g")
+    //   .data(categories)
+    //   .enter()
+    //   .append('text')
+    //   .text(d=> d.label)
+    //   .attr('x', d=> xContScale(d.cat))
+    //   .attr('y', height / 2);
+
+    var header1 = svg.append("g")
+      .append('text')
+      .text('Dems control all 3')
+      .attr('class', 'headerLabel')
+      .attr('x', width * 0.1)
+      .attr('y', height * 0.25);
+
+    var header2 = svg.append("g")
+      .append('text')
+      .text('Dems control 2')
+      .attr('class', 'headerLabel')
+      .attr('x', width * 0.35)
+      .attr('y', height * 0.25);
+
+    var header3 = svg.append("g")
+      .append('text')
+      .text('Reps control 2')
+      .attr('class', 'headerLabel')
+      .attr('x', width * 0.55)
+      .attr('y', height * 0.25);
+
+    var header4 = svg.append("g")
+      .append('text')
+      .text('Reps controll all 3')
+      .attr('class', 'headerLabel')
+      .attr('x', width * 0.8)
+      .attr('y', height * 0.25);
+
+    // year label
+    var yearLabel = svg.append("g")
+      .append('text')
+      .text(2021)
+      .attr('class', 'yearLabel')
+      .attr('x', 325)
+      .attr('y', height * 0.98);
 
 
 
@@ -288,14 +353,14 @@ d3.queue()
         .on('active', function(i){
           
           // STEPS (TURN WORD WRAP OFF FOR EASIER VIEW)
-          //              0                         1             2                       3                        4
+          //              0                         1                        2            3                       4
           
-          var xScales =   [xContScale,              xLonScale,   xLonScale,    xContScale,             xVoteScale,              xContScale];
-          var xInputs =   ['government_cont_text',  'state_x',   'state_x',    'government_cont_text', 'pres_vote_rep',         'government_cont_text'];
-          var yScales =   [dummyScale,              yLatScale,   yLatScale,    dummyScale,             dummyScale,              dummyScale];
-          var yInputs =   [0,                       'state_y',   'state_y',    'state_y',              'state_y',               'state_y']; // figure out why /4 instead of /2
-          var map =       ['FALSE',                 'TRUE',      'TRUE',       'TRUE',                 'TRUE',                  'FALSE'];
-          var dataYear =  [2021,                    2021,        1975,         1993,                   1995,                    2021];
+          var xScales =   [xContScale,              xVoteScale,              xLonScale,   xLonScale,    xContScale,             xVoteScale,        xVoteScale,             xContScale,             xContScale];
+          var xInputs =   ['government_cont_text',  'pres_vote_rep',         'state_x',   'state_x',    'government_cont_text', 'pres_vote_rep',   'pres_vote_rep',        'government_cont_text', 'government_cont_text'];
+          var yScales =   [dummyScale,              dummyScale,              yLatScale,   yLatScale,    dummyScale,             dummyScale,        dummyScale,             dummyScale,             dummyScale];
+          var yInputs =   [0,                       0,                       'state_y',   'state_y',    'state_y',              'state_y',         'state_y',              'state_y',              'state_y']; // figure out why /4 instead of /2
+          var map =       ['FALSE',                 'FALSE',                 'TRUE',      'TRUE',       'TRUE',                 'TRUE',            'TRUE',                 'TRUE',                 'TRUE'];
+          var dataYear =  [2021,                    2021,                    2021,        1975,         1995,                   2010,              2010,                    2011,                   2021];
 
           // update bubble color based on year
           update(dataYear[i]);
@@ -324,8 +389,14 @@ d3.queue()
             .nodes(data21)
             .on("tick", function(d){
               
-              // for steps 0 and 2, fix positions of nodes so they aren't influenced by other forces
-              /// need to figure out how to include transitions
+              // for step 1, fix positions of nodes so they aren't influenced by other forces
+              if (i === 1) {
+                node.each(function(dd){
+                  dd.x = xScales[i](dd[xInputs[i]]);
+                  dd.y = dd.y
+                }) 
+              }
+              /// could do others - need to figure out how to include transitions
               // if (i === 0) {
               //   node.each(function(dd){
               //     dd.x = xScales[i](dd[xInputs[i]]);
@@ -335,11 +406,6 @@ d3.queue()
               //   node.each(function(dd){
               //     dd.x = dd.x;
               //     dd.y = dd.y;
-              //   }) 
-              // } else if (i === 2) {
-              //   node.each(function(dd){
-              //     dd.x = xScales[i](dd[xInputs[i]]);
-              //     dd.y = dd.y
               //   }) 
               // } else if (i === 1) {
               //   node.each(function(dd){
@@ -357,18 +423,29 @@ d3.queue()
                   .attr("y", function(d){ return d.y + textSize / 2 - 2; }) // adds half of text size to vertically center in bubbles
             });
 
+          if (i === 0) {
+            d3.selectAll('.headerLabel').style('opacity', 1);
+          } else {
+            d3.selectAll('.headerLabel').style('opacity', 0);
+          }
+
           // basemap - show or hide depending on step
           if (map[i] === 'FALSE') {
             basemap.style('display', 'none');
             d3.selectAll('.myCircle').style('display', 'none');
             node.style('opacity', 1);
             label.style('opacity', 1);
+            yearLabel.style('opacity', 0)
           } else if (map[i] === 'TRUE') {
             basemap.style('display', 'block');
             d3.selectAll('.myCircle').style('display', 'block');
             node.style('opacity', 0);
             label.style('opacity', 0);
+            yearLabel.style('opacity', 1)
           };
+
+          // update year label
+          yearLabel.transition().text(dataYear[i]);
 
         }); // end 'active' listener
 

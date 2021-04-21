@@ -53,6 +53,10 @@ h1{
     text-align: left;
   }
 
+  h2{
+    margin-top: 60px;
+  }
+
   p{
     font-size: 18px;
   }
@@ -137,4 +141,14 @@ svg{
 label{
   text-anchor: middle;
   fill: red;
+}
+
+.headerLabel{
+  text-anchor: middle;
+}
+
+.yearLabel{
+  text-anchor: middle;
+  font-size: 24px;
+  font-weight: bold;
 }
