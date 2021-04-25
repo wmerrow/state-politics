@@ -28,9 +28,7 @@ d3.queue()
   console.log(data_all);
 
   // filter to 2021
-  var data21 = data_all
-    .filter(({year}) => year === 2021);
-
+  var data21 = data_all.filter(({year}) => year === 2021);
 
   var oldWidth = 0
 
@@ -55,14 +53,20 @@ d3.queue()
     var textSize = 10;
     var nodePadding = 2;
 
+    var contCats = ['NA', 'full_dem', 'lean_dem', 'lean_rep', 'full_rep'];
+
     // color scale
     var color = d3.scaleOrdinal()
-      .domain(['NA', 'full_dem', 'lean_dem', 'lean_rep', 'full_rep'])
+      .domain(contCats)
       .range(['#dddddd', '#4393c3', '#92c5de', '#f4a582', '#d6604d']);
+    // var colortest = d3.scaleOrdinal()
+    //   .domain(contCats)
+    //   .range(['#dddddd', '#358463', '#795573', '#478149', '#435793']);
 
     // size scale
+    var pop_max = d3.max(data21, function(d) { return d.pop; });
     var size = d3.scaleSqrt()
-      .domain([0, 39368078])
+      .domain([0, pop_max])
       .range([0, 30]); // max radius
 
     // x scale for longitude
@@ -75,8 +79,8 @@ d3.queue()
       .range([height * 0, height * 1]);
     // x scale for control
     var xContScale = d3.scaleOrdinal()
-      .domain( ['NA',       'full_dem',    'lean_dem',   'lean_rep',   'full_rep'])
-      .range(  [width * 0.5,  width * 0.15,  width * 0.4,  width * 0.6,  width * 0.85]);
+      .domain(contCats)
+      .range([width * 0.5,  width * 0.15,  width * 0.4,  width * 0.6,  width * 0.85]);
     // x scale for pres vote
     var xVoteScale = d3.scaleLinear()
       .domain([0.2, 0.8])
@@ -94,9 +98,9 @@ d3.queue()
     // add svg
     var svg = d3.select('#graph').html('')
       .append('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .attr('id', 'mySvg');
+      .attr('width', width)
+      .attr('height', height)
+      .attr('id', 'mySvg');
 
     // // slider dimensions
     // var sliderSize = {
@@ -276,32 +280,18 @@ d3.queue()
     //   .attr('x', d=> xContScale(d.cat))
     //   .attr('y', height / 2);
 
-    var header1 = svg.append("g")
-      .append('text')
-      .text('Dems control all 3')
-      .attr('class', 'headerLabel')
-      .attr('x', width * 0.1)
-      .attr('y', height * 0.25);
+    var contLabels = ['All Dem', '2D 1R', '1D 2R', 'All Rep'];
+    var heads = [0.1, 0.35, 0.55, 0.8];
 
-    var header2 = svg.append("g")
+    // control labels
+    svg.append("g").selectAll('.headerLabel')
+      .data(heads).enter()
       .append('text')
-      .text('Dems control 2')
+      .text(function(d, i) {
+          return contLabels[i]
+      })
       .attr('class', 'headerLabel')
-      .attr('x', width * 0.35)
-      .attr('y', height * 0.25);
-
-    var header3 = svg.append("g")
-      .append('text')
-      .text('Reps control 2')
-      .attr('class', 'headerLabel')
-      .attr('x', width * 0.55)
-      .attr('y', height * 0.25);
-
-    var header4 = svg.append("g")
-      .append('text')
-      .text('Reps controll all 3')
-      .attr('class', 'headerLabel')
-      .attr('x', width * 0.8)
+      .attr('x', d=> width * d)
       .attr('y', height * 0.25);
 
     // year label
@@ -311,10 +301,6 @@ d3.queue()
       .attr('class', 'yearLabel')
       .attr('x', 325)
       .attr('y', height * 0.98);
-
-
-
-
 
 
     // TEST
@@ -353,13 +339,17 @@ d3.queue()
         .on('active', function(i){
           
           // STEPS (TURN WORD WRAP OFF FOR EASIER VIEW)
-          //              0                         1                        2            3                       4
-          
+          //i             0                         1                        2            3                       4
+          //x
           var xScales =   [xContScale,              xVoteScale,              xLonScale,   xLonScale,    xContScale,             xVoteScale,        xVoteScale,             xContScale,             xContScale];
           var xInputs =   ['government_cont_text',  'pres_vote_rep',         'state_x',   'state_x',    'government_cont_text', 'pres_vote_rep',   'pres_vote_rep',        'government_cont_text', 'government_cont_text'];
+          //y
           var yScales =   [dummyScale,              dummyScale,              yLatScale,   yLatScale,    dummyScale,             dummyScale,        dummyScale,             dummyScale,             dummyScale];
           var yInputs =   [0,                       0,                       'state_y',   'state_y',    'state_y',              'state_y',         'state_y',              'state_y',              'state_y']; // figure out why /4 instead of /2
-          var map =       ['FALSE',                 'FALSE',                 'TRUE',      'TRUE',       'TRUE',                 'TRUE',            'TRUE',                 'TRUE',                 'TRUE'];
+          //color
+          var cScales =   [color,                   color,              xLonScale,   xLonScale,    xContScale,             xVoteScale,        xVoteScale,             xContScale,             xContScale];
+          var cInputs =   ['government_cont_text',  'government_cont_text',         'state_x',   'state_x',    'government_cont_text', 'pres_vote_rep',   'pres_vote_rep',        'government_cont_text', 'government_cont_text'];          var map =       ['FALSE',                 'FALSE',                 'TRUE',      'TRUE',       'TRUE',                 'TRUE',            'TRUE',                 'TRUE',                 'TRUE'];
+          //year
           var dataYear =  [2021,                    2021,                    2021,        1975,         1995,                   2010,              2010,                    2011,                   2021];
 
           // update bubble color based on year
@@ -372,7 +362,7 @@ d3.queue()
 
           // Features of the forces applied to the nodes
           var simulation = d3.forceSimulation()
-            // x positions depend on step
+            // x and y positions depend on step
             .force("x", d3.forceX().strength(.1).x( function(d){ 
               return xScales[i](d[xInputs[i]]) 
             }))
@@ -380,13 +370,14 @@ d3.queue()
               return yScales[i](0)//(d[yInputs[i]])
             }))
             .force("center", d3.forceCenter().x(width / 2).y(height / 2)) // Attraction to the center of the svg area
-            .force("charge", d3.forceManyBody().strength(10)) // Nodes are attracted one each other of value is > 0
-            .force("collide", d3.forceCollide().strength(0.2).radius(d=> size(d.pop) + nodePadding).iterations(1)) // Force that avoids circle overlapping
+            //.force("charge", d3.forceManyBody().strength(10)) // Nodes are attracted one another of value is > 0
+            .force("collide", d3.forceCollide().strength(0.5).radius(d=> size(d.pop) + nodePadding).iterations(1)) // Force that avoids circle overlapping
 
           // Apply these forces to the nodes and update their positions.
           // Once the force algorithm is happy with positions ('alpha' value is low enough), simulations will stop.
           simulation
             .nodes(data21)
+            // positions gradually update on tick
             .on("tick", function(d){
               
               // for step 1, fix positions of nodes so they aren't influenced by other forces
@@ -413,7 +404,6 @@ d3.queue()
               //     dd.y = dd.y;
               //   }) 
               // }
-              
 
               node
                   .attr("cx", function(d){ return d.x; })
@@ -421,7 +411,10 @@ d3.queue()
               label
                   .attr("x", function(d){ return d.x; })
                   .attr("y", function(d){ return d.y + textSize / 2 - 2; }) // adds half of text size to vertically center in bubbles
-            });
+            }); // end on tick
+
+          // update node colors
+          node.transition().style("fill", d=> cScales[i](d[cInputs[i]]));
 
           if (i === 0) {
             d3.selectAll('.headerLabel').style('opacity', 1);
