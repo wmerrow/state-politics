@@ -50,7 +50,7 @@ d3.queue()
 
     var r = 40;
     var textSize = 10;
-    var nodePadding = 2;
+    var nodePadding = 1;
 
     var contCats = ['NA', 'full_dem', 'lean_dem', 'lean_rep', 'full_rep'];
 
@@ -173,26 +173,20 @@ d3.queue()
     // add g after basemap so it goes on top
     var g = svg.append('g');
 
+    // BUBBLES
+
     var node = g.append("g")
       .attr("stroke", "#fff")
       .attr("stroke-width", 1)
       .selectAll(".node");
-    
-    var nodes = data21;
 
-    var simulation = d3.forceSimulation(nodes);
-      //.force("charge", d3.forceManyBody().strength(-150))
-      // initial x and y positions
-      // .force("x", d3.forceX().strength(0.5).x(d=> xLonScale(d.state_x)))
-      // .force("y", d3.forceY().strength(0.1).y(0))
-      // avoid collisions
-      //.force("collide", d3.forceCollide().strength(0.5).radius(d=> size(d.pop) + nodePadding).iterations(1)) // Force that avoids circle overlapping
-      // ?
-      //.force("center", d3.forceCenter().x(width / 2).y(height / 2))
-      // ?
-      //.alphaTarget(1);
-      // ?
-      //.on("tick", tickedFirst);
+    var label = g.append("g")
+      .selectAll("labelText");
+      //.attr("class", "label")
+    
+    // nodes can be empty to start since they get populated on scroll
+    var initialNodes = [];
+    var simulation = d3.forceSimulation(initialNodes);
 
     function update(nodes,
                     xScale,
@@ -205,7 +199,7 @@ d3.queue()
       // transition ///(keep this line within update, not sure why)
       var t = d3.transition().duration(750);
 
-      // Apply the general update pattern to the nodes.
+      // Apply the general update pattern to the nodes
 
       node = node
         .data(nodes, d=> d.state); /// what is d.state doing?
@@ -225,40 +219,59 @@ d3.queue()
         .attr("r", d=> size(d.pop))
         .merge(node);
 
+      // Apply the general update pattern to the labels
+
+      label = label
+        .data(nodes, d=> d.state); /// what is d.state doing?
+
+      label.exit()
+        .transition(t)
+        .remove();
+
+      label
+        .transition(t)
+        .text(d=> d.state_abbrev)
+        .style("text-anchor", "middle")
+        .style("font-size", textSize);
+
+      label = label.enter().append("text")
+        .text(d=> d.state_abbrev)
+        .style("text-anchor", "middle")
+        .style("font-size", textSize)
+        .merge(label);
+
+
       // Update and restart the simulation.
       simulation.nodes(nodes)
-        .force("x", d3.forceX().strength(0.5).x(d=> xScale(d[xInput])))
+        .force("x", d3.forceX().strength(0.1).x(d=> xScale(d[xInput])))
         .force("y", d3.forceY().strength(0.1).y(d=> yScale(d[yInput])))
-        .force("collide", d3.forceCollide().strength(0.5).radius(d=> size(d.pop) + nodePadding).iterations(1));
+        // avoid collision - change strength and number of iterations to adjust
+        .force("collide", d3.forceCollide().strength(1).radius(d=> size(d.pop) + nodePadding).iterations(10));
 
       simulation.on('tick', function(){
-        node.attr("cx", d=> d.x)
-            .attr("cy", d=> d.y)
-        // node.attr("cx", d=> xScale(d[xInput]))
-        //     .attr("cy", d=> yScale(d[yInput]))
+        node
+          //.transition().duration(50) /// transition on each tick to slow down bubbles, but this messes with bubble steps for some reason
+          .attr("cx", d=> d.x)
+          .attr("cy", d=> d.y);
+        label
+          //.transition().duration(50) /// transition on each tick to slow down bubbles, but this messes with bubble steps for some reason
+          .attr("x", d=> d.x)
+          .attr("y", d=> d.y + textSize / 2 - 2); // adds half of text size to vertically center in bubbles
       });
 
-      simulation.alphaTarget(0.3);
+      simulation.alphaTarget(1);
 
       var t = d3.timer(function(elapsed) {
           if (elapsed > 1000) {
-              simulation.alphaTarget(0); //After 1500ms, rest
-              console.log("Time Passed")
+              simulation.alphaTarget(0); //After 1000ms, rest
+              //console.log("Time Passed")
               t.stop()
           };
-      }, 1);
+      }, 1); // start timer after 1ms
 
     }
 
-    // // x and y positions for first draw (might be able to delete the .on on initial simulation above?)
-    // function tickedFirst() {
-    //     node.attr("cx", d=> d.x)
-    //         .attr("cy", d=> d.y)
-    //   // node.attr("cx", d=> xLonScale(d.state_x))
-    //   //     .attr("cy", d=> yLatScale(d.state_y))
-    // }
-
-
+    // LABELING
 
     var contText = ['All Dem', '2D 1R', '1D 2R', 'All Rep'];
     var contPositions = [0.1, 0.35, 0.55, 0.8];
@@ -293,15 +306,15 @@ d3.queue()
         // .offset(innerWidth < 900 ? innerHeight - 30 : 200)
         .on('active', function(i){
           
-          /// testing
-          var data75 = data_all
-            .filter(({year}) => year === 1975);
+          // /// testing
+          // var data75 = data_all
+          //   .filter(({year}) => year === 1975);
           // STEPS (TURN WORD WRAP OFF FOR EASIER VIEW)
 
           //i             0              1                  2             3             4             5             6             7             8
           //year
           var dataYear =  [2021,         2021,              2021,         1975,         1995,         2010,         2010,         2011,         2021];
-          var dataTest =  [data21,         data21,              data21,         data75,         1995,         2010,         2010,         2011,         2021];
+          //var dataTest =  [data21,         data21,              data21,         data75,         1995,         2010,         2010,         2011,         2021];
           //map
           var map =       ['FALSE',      'FALSE',           'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE'];
           //x
@@ -318,11 +331,8 @@ d3.queue()
           var newData = data_all
             .filter(({year}) => year === dataYear[i]);
 
-   
-          
-          /// test animated changes with data staying constant
           // update bubbles
-          update(dataTest[i],
+          update(newData,
                  xScales[i],
                  xInputs[i],
                  yScales[i],
