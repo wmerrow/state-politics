@@ -49,13 +49,16 @@ d3.queue()
     var width = 700;
     var height = 450;
 
+    var alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+    var nodes = data21;
+
     var r = 40;
     var textSize = 10;
     var nodePadding = 2;
 
     var contCats = ['NA', 'full_dem', 'lean_dem', 'lean_rep', 'full_rep'];
 
-    // color scale
+    // color scale for control categories
     var color = d3.scaleOrdinal()
       .domain(contCats)
       .range(['#dddddd', '#4393c3', '#92c5de', '#f4a582', '#d6604d']);
@@ -173,159 +176,209 @@ d3.queue()
 
     // add g (after basemap so it goes on top)
     var g = svg.append('g');
+    var node = g.append("g").attr("stroke", "#fff").attr("stroke-width", 1.5).selectAll(".node");
 
-    // draw plot using specified data
-    function drawPlot(selectedData) {
-      var circles = g.selectAll("circle")
-        .data(selectedData);
+    var simulation = d3.forceSimulation(nodes)
+      .force("charge", d3.forceManyBody().strength(-150))
+      .force("forceX", d3.forceX().strength(.1))
+      .force("forceY", d3.forceY().strength(.1))
+      .force("center", d3.forceCenter())
+      .alphaTarget(1)
+      .on("tick", ticked);
 
-      // if filtered dataset has less circles than already existing, remove excess
-      circles.exit()
+    function restart(nodes) {
+
+      // transition
+      var t = d3.transition()
+          .duration(750);
+
+      // Apply the general update pattern to the nodes.
+      node = node.data(nodes, d=> d.state);
+
+      node.exit()
+          //.style("fill", "#b26745")
+        .transition(t)
+        .attr("r", 1e-6)
         .remove();
 
-      // if filtered dataset has more circles than already existing, transition new ones in
-      var new_circles = circles.enter()
-        .append("circle")
-        .attr('class', 'myCircle')
+      node
+        .transition(t)
+        .style("fill", d=> color(d.government_cont_text))
+        .attr("r", d=> size(d.pop));
+
+      node = node.enter().append("circle")
+        .style("fill", d=> color(d.government_cont_text))
         .attr("r", d=> size(d.pop))
-        .attr('cx', width/2)
-        .attr('cy', height/2)
-        .style("fill", "#dddddd");
+        .merge(node);
 
-      new_circles.merge(circles)
-        .transition().duration(1500)
-        // .attr("r", d=> size(d.pop)) // UNCOMMENT TO HAVE CIRCLES UPDATE POP
-        .attr('cx', d=> xLonScale(d.state_x))
-        .attr('cy', d=> yLatScale(d.state_y))
-        .style("fill", d=> color(d.government_cont_text));
+      // Update and restart the simulation.
+      simulation.nodes(nodes)
+        .force("collide", d3.forceCollide().strength(1).radius(d=> size(d.pop) + 10).iterations(1));
+
+    }
+
+    function ticked() {
+      node.attr("cx", d=> xLonScale(d.state_x))
+          .attr("cy", d=> yLatScale(d.state_y))
+    }
+
+
+
+
+
+          //     // Features of the forces applied to the nodes
+          // var simulation = d3.forceSimulation()
+          //   // x and y positions depend on step
+          //   .force("x", d3.forceX().strength(.1).x( function(d){ 
+          //     return selectedX(d[selectedXinput]) 
+          //   }))
+          //   .force("y", d3.forceY().strength(.1).y( function(d){
+          //     return selectedY(d[selectedYinput])
+          //     // if (i > 1) {
+          //     //   return selectedY(d[selectedYinput]);
+          //     // } else {
+          //     //   return 200;
+          //     // }
+          //   }))
+          //   .force("center", d3.forceCenter().x(width / 2).y(height / 2)) // Attraction to the center of the svg area
+          //   //.force("charge", d3.forceManyBody().strength(10)) // Nodes are attracted one another of value is > 0
+          //   .force("collide", d3.forceCollide().strength(0.5).radius(d=> size(d.pop) + nodePadding).iterations(1)) // Force that avoids circle overlapping
+
+
+    // // draw plot using specified data
+    // function drawPlot(selectedData, selectedX, selectedXinput, selectedY, selectedYinput, selectedC, selectedCinput) {
+    //   // var circles = g.selectAll("circle")
+    //   //   .data(selectedData);
+
+    //   // // if filtered dataset has less circles than already existing, remove excess
+    //   // circles.exit()
+    //   //   .remove();
+
+    //   // // if filtered dataset has more circles than already existing, transition new ones in
+    //   // var new_circles = circles.enter()
+    //   //   .append("circle")
+    //   //   .attr('class', 'myCircle')
+    //   //   .attr("r", d=> size(d.pop))
+    //   //   .attr('cx', width/2)
+    //   //   .attr('cy', height/2)
+    //   //   .style("fill", "#dddddd");
+
+    //   // new_circles.merge(circles)
+    //   //   .transition().duration(1500)
+    //   //   // .attr("r", d=> size(d.pop)) // UNCOMMENT TO HAVE CIRCLES UPDATE POP
+    //   //   .attr('cx', d=> xLonScale(d.state_x))
+    //   //   .attr('cy', d=> yLatScale(d.state_y))
+    //   //   .style("fill", d=> color(d.government_cont_text));
  
-      // // set up labels
-      // var circleLabel = g.selectAll("text")
-      //   .data(data21)
-      //   .enter()
-      //   .append("text")
-      //   .text(d=> d.state_short)
-      //   .attr("class", "label")
-      //   .style("text-anchor", "middle")
-      //   .style("font-size", textSize)
-      //   .attr('x', d=> xLonScale(d.state_x))
-      //   .attr('y', d=> yLatScale(d.state_y));
+    //   // // // set up labels
+    //   // // var circleLabel = g.selectAll("text")
+    //   // //   .data(data21)
+    //   // //   .enter()
+    //   // //   .append("text")
+    //   // //   .text(d=> d.state_short)
+    //   // //   .attr("class", "label")
+    //   // //   .style("text-anchor", "middle")
+    //   // //   .style("font-size", textSize)
+    //   // //   .attr('x', d=> xLonScale(d.state_x))
+    //   // //   .attr('y', d=> yLatScale(d.state_y));
 
-    }; // end drawPlot
+
+
+    //       // set up nodes and labels: all located at the center of the svg area to start
+          
+    //       var node = svg.append("g")
+    //         .selectAll("node")
+    //         .data(selectedData)
+    //         .enter()
+    //         .append("circle")
+    //         .attr('class', 'myNode')
+    //         .attr("r", d=> size(d.pop))
+    //         .attr("cx", width / 2)
+    //         .attr("cy", height / 2)
+    //         .style("fill", d=> color(d.government_cont_text));
+
+    //       // var label = svg.append("g")
+    //       //   .selectAll("labelText")
+    //       //   .data(data21)
+    //       //   .enter()
+    //       //   .append("text")
+    //       //   .text(d=> d.state_abbrev)
+    //       //   .attr("class", "label")
+    //       //   .style("text-anchor", "middle")
+    //       //   .style("font-size", textSize)
+    //       //   .attr('x', width / 2)
+    //       //   .attr('y', height / 2);
+
+
+
+    //       // Apply these forces to the nodes and update their positions.
+    //       // Once the force algorithm is happy with positions ('alpha' value is low enough), simulations will stop.
+    //       simulation
+    //         .nodes(selectedData)
+    //         // positions gradually update on tick
+    //         .on("tick", function(d){
+              
+    //           //// for step 1, fix positions of nodes so they aren't influenced by other forces
+    //           // if (i === 1) {
+    //           //   node.each(function(dd){
+    //           //     dd.x = xScales[i](dd[xInputs[i]]);
+    //           //     dd.y = dd.y
+    //           //   }) 
+    //           // }
+    //           /// could do other stepts but need to figure out how to include transitions
+
+    //           node
+    //               .attr("cx", function(d){ return d.x; })
+    //               .attr("cy", function(d){ return d.y; });
+    //           // label
+    //           //     .attr("x", function(d){ return d.x; })
+    //           //     .attr("y", function(d){ return d.y + textSize / 2 - 2; }); // adds half of text size to vertically center in bubbles
+    //         }); // end on tick
+
+    //       // update node colors
+    //       node.transition().style("fill", d=> selectedC(d[selectedCinput]));
+
+
+
+    // }; // end drawPlot
+
+
 
     // update plot with specified year
-    function update(newYear) {
+    function update(newYear, newX, newXinput, newY, newYinput, newC, newCinput) {
       // filter data set and redraw plot
       var newData = data_all
         .filter(({year}) => year === newYear);
 
-      drawPlot(newData);
+      drawPlot(newData, newX, newXinput, newY, newYinput, newC, newCinput);
     };
 
 
 
 
 
-    // set up nodes and labels: all located at the center of the svg area to start
-    
-    var node = svg.append("g")
-      .selectAll("node")
-      .data(data21)
-      .enter()
-      .append("circle")
-      .attr('class', 'myNode')
-      .attr("r", d=> size(d.pop))
-      .attr("cx", width / 2)
-      .attr("cy", height / 2)
-      .style("fill", d=> color(d.government_cont_text));
 
-    var label = svg.append("g")
-      .selectAll("labelText")
-      .data(data21)
-      .enter()
-      .append("text")
-      .text(d=> d.state_abbrev)
-      .attr("class", "label")
-      .style("text-anchor", "middle")
-      .style("font-size", textSize)
-      .attr('x', width / 2)
-      .attr('y', height / 2);
+    var contText = ['All Dem', '2D 1R', '1D 2R', 'All Rep'];
+    var contPositions = [0.1, 0.35, 0.55, 0.8];
 
-    // var categories = [
-    //     {
-    //       'cat': 'full_dem',
-    //       'label': "Full Dem control"
-    //     },
-    //     {
-    //       'cat': 'lean_dem',
-    //       'label': "Lean Dem control"
-    //     },
-    //     {
-    //       'cat': 'lean_rep',
-    //       'label': "Lean Rep control"
-    //     },
-    //     {
-    //       'cat': 'full_rep',
-    //       'label': "Full Rep control"
-    //     }
-    //   ];
-
-    // console.log(categories);
-
-    // var headers = svg.append("g")
-    //   .data(categories)
-    //   .enter()
-    //   .append('text')
-    //   .text(d=> d.label)
-    //   .attr('x', d=> xContScale(d.cat))
-    //   .attr('y', height / 2);
-
-    var contLabels = ['All Dem', '2D 1R', '1D 2R', 'All Rep'];
-    var heads = [0.1, 0.35, 0.55, 0.8];
-
-    // control labels
-    svg.append("g").selectAll('.headerLabel')
-      .data(heads).enter()
+    // add control labels
+    var contLabel = svg.append("g").selectAll('.headerLabel')
+      .data(contPositions).enter()
       .append('text')
       .text(function(d, i) {
-          return contLabels[i]
+          return contText[i]
       })
       .attr('class', 'headerLabel')
       .attr('x', d=> width * d)
       .attr('y', height * 0.25);
 
-    // year label
+    // add year label
     var yearLabel = svg.append("g")
       .append('text')
       .text(2021)
       .attr('class', 'yearLabel')
       .attr('x', 325)
       .attr('y', height * 0.98);
-
-
-    // TEST
-
-    // var nodeTest = svg.append("g")
-    //   .selectAll("circle2")
-    //   .data(data21)
-    //   .enter()
-    //   .append("circle")
-    //   .attr("r", d=> size(d.pop))
-    //   .attr("cx", d=> xVoteScale(d.pres_vote_rep))
-    //   .attr("cy", height * 0.25)
-    //   .style("fill", d=> color(d.government_cont_text));
-
-    // var labelTest = svg.append("g")
-    //   .selectAll("text2")
-    //   .data(data21)
-    //   .enter()
-    //   .append("text")
-    //   .text(d=> d.state_abbrev)
-    //   .attr("class", "label")
-    //   .style("text-anchor", "middle")
-    //   .style("font-size", textSize)
-    //   .attr("x", d=> xVoteScale(d.pres_vote_rep))
-    //   .attr("y", height * 0.25);
 
 
     // GRAPH SCROLL WITH LISTENER
@@ -347,74 +400,22 @@ d3.queue()
           var yScales =   [dummyScale,              dummyScale,              yLatScale,   yLatScale,    dummyScale,             dummyScale,        dummyScale,             dummyScale,             dummyScale];
           var yInputs =   [0,                       0,                       'state_y',   'state_y',    'state_y',              'state_y',         'state_y',              'state_y',              'state_y']; // figure out why /4 instead of /2
           //color
-          var cScales =   [color,                   color,              xLonScale,   xLonScale,    xContScale,             xVoteScale,        xVoteScale,             xContScale,             xContScale];
-          var cInputs =   ['government_cont_text',  'government_cont_text',         'state_x',   'state_x',    'government_cont_text', 'pres_vote_rep',   'pres_vote_rep',        'government_cont_text', 'government_cont_text'];          var map =       ['FALSE',                 'FALSE',                 'TRUE',      'TRUE',       'TRUE',                 'TRUE',            'TRUE',                 'TRUE',                 'TRUE'];
+          var cScales =   [color,                   color,                   xLonScale,   xLonScale,    xContScale,             xVoteScale,        xVoteScale,             xContScale,             xContScale];
+          var cInputs =   ['government_cont_text',  'government_cont_text',  'state_x',   'state_x',    'government_cont_text', 'pres_vote_rep',   'pres_vote_rep',        'government_cont_text', 'government_cont_text'];          var map =       ['FALSE',                 'FALSE',                 'TRUE',      'TRUE',       'TRUE',                 'TRUE',            'TRUE',                 'TRUE',                 'TRUE'];
           //year
           var dataYear =  [2021,                    2021,                    2021,        1975,         1995,                   2010,              2010,                    2011,                   2021];
 
           // update bubble color based on year
-          update(dataYear[i]);
-          
+          //update(dataYear[i], xScales[i], xInputs[i], yScales[i], yInputs[i], cScales[i], cInputs[i]);
+          var newData = data_all
+            .filter(({year}) => year === dataYear[i]);
+
+          restart(newData);
+
           // node
           //   .data(data21)
           //   .attr("cx", function(d){ return d.x; })
           //   .attr("cy", function(d){ return d.y; })
-
-          // Features of the forces applied to the nodes
-          var simulation = d3.forceSimulation()
-            // x and y positions depend on step
-            .force("x", d3.forceX().strength(.1).x( function(d){ 
-              return xScales[i](d[xInputs[i]]) 
-            }))
-            .force("y", d3.forceY().strength(.1).y( function(d){
-              return yScales[i](0)//(d[yInputs[i]])
-            }))
-            .force("center", d3.forceCenter().x(width / 2).y(height / 2)) // Attraction to the center of the svg area
-            //.force("charge", d3.forceManyBody().strength(10)) // Nodes are attracted one another of value is > 0
-            .force("collide", d3.forceCollide().strength(0.5).radius(d=> size(d.pop) + nodePadding).iterations(1)) // Force that avoids circle overlapping
-
-          // Apply these forces to the nodes and update their positions.
-          // Once the force algorithm is happy with positions ('alpha' value is low enough), simulations will stop.
-          simulation
-            .nodes(data21)
-            // positions gradually update on tick
-            .on("tick", function(d){
-              
-              // for step 1, fix positions of nodes so they aren't influenced by other forces
-              if (i === 1) {
-                node.each(function(dd){
-                  dd.x = xScales[i](dd[xInputs[i]]);
-                  dd.y = dd.y
-                }) 
-              }
-              /// could do others - need to figure out how to include transitions
-              // if (i === 0) {
-              //   node.each(function(dd){
-              //     dd.x = xScales[i](dd[xInputs[i]]);
-              //     dd.y = yScales[i](dd[yInputs[i]]);
-              //   }) 
-              // } else if (i === 1) {
-              //   node.each(function(dd){
-              //     dd.x = dd.x;
-              //     dd.y = dd.y;
-              //   }) 
-              // } else if (i === 1) {
-              //   node.each(function(dd){
-              //     dd.x = dd.x;
-              //     dd.y = dd.y;
-              //   }) 
-              // }
-
-              node
-                  .attr("cx", function(d){ return d.x; })
-                  .attr("cy", function(d){ return d.y; })
-              label
-                  .attr("x", function(d){ return d.x; })
-                  .attr("y", function(d){ return d.y + textSize / 2 - 2; }) // adds half of text size to vertically center in bubbles
-            }); // end on tick
-
-          // update node colors
-          node.transition().style("fill", d=> cScales[i](d[cInputs[i]]));
 
           if (i === 0) {
             d3.selectAll('.headerLabel').style('opacity', 1);
@@ -425,15 +426,15 @@ d3.queue()
           // basemap - show or hide depending on step
           if (map[i] === 'FALSE') {
             basemap.style('display', 'none');
-            d3.selectAll('.myCircle').style('display', 'none');
-            node.style('opacity', 1);
-            label.style('opacity', 1);
+            //d3.selectAll('.myCircle').style('display', 'none');
+            //node.style('opacity', 1);
+            //label.style('opacity', 1);
             yearLabel.style('opacity', 0)
           } else if (map[i] === 'TRUE') {
             basemap.style('display', 'block');
-            d3.selectAll('.myCircle').style('display', 'block');
-            node.style('opacity', 0);
-            label.style('opacity', 0);
+            //d3.selectAll('.myCircle').style('display', 'block');
+            //node.style('opacity', 0);
+            //label.style('opacity', 0);
             yearLabel.style('opacity', 1)
           };
 
