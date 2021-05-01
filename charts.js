@@ -1,5 +1,3 @@
-// d3.csv('data/xxxx.csv', function (data_all) {
-
 d3.queue()
 .defer(d3.csv, "data/output/party_control.csv")
 //.defer(d3.csv, "data/parties_first-last.csv")
@@ -174,16 +172,27 @@ d3.queue()
 
     // add g after basemap so it goes on top
     var g = svg.append('g');
-    var node = g.append("g").attr("stroke", "#fff").attr("stroke-width", 1).selectAll(".node");
+
+    var node = g.append("g")
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1)
+      .selectAll(".node");
+    
     var nodes = data21;
 
-    var simulation = d3.forceSimulation(nodes)
-      .force("charge", d3.forceManyBody().strength(-150))
-      .force("forceX", d3.forceX().strength(.1))
-      .force("forceY", d3.forceY().strength(.1))
-      .force("center", d3.forceCenter())
-      .alphaTarget(1)
-      .on("tick", ticked);
+    var simulation = d3.forceSimulation(nodes);
+      //.force("charge", d3.forceManyBody().strength(-150))
+      // initial x and y positions
+      // .force("x", d3.forceX().strength(0.5).x(d=> xLonScale(d.state_x)))
+      // .force("y", d3.forceY().strength(0.1).y(0))
+      // avoid collisions
+      //.force("collide", d3.forceCollide().strength(0.5).radius(d=> size(d.pop) + nodePadding).iterations(1)) // Force that avoids circle overlapping
+      // ?
+      //.force("center", d3.forceCenter().x(width / 2).y(height / 2))
+      // ?
+      //.alphaTarget(1);
+      // ?
+      //.on("tick", tickedFirst);
 
     function update(nodes,
                     xScale,
@@ -192,18 +201,18 @@ d3.queue()
                     yInput,
                     cScale,
                     cInput) { 
-
-      // transition
-      var t = d3.transition()
-          .duration(750);
+      
+      // transition ///(keep this line within update, not sure why)
+      var t = d3.transition().duration(750);
 
       // Apply the general update pattern to the nodes.
 
-      node = node.data(nodes, d=> d.state);
+      node = node
+        .data(nodes, d=> d.state); /// what is d.state doing?
 
       node.exit()
         .transition(t)
-        .attr("r", 1e-6)
+        .attr("r", 1000) /// testing if bubbles are being removed
         .remove();
 
       node
@@ -218,153 +227,36 @@ d3.queue()
 
       // Update and restart the simulation.
       simulation.nodes(nodes)
-        .force("collide", d3.forceCollide().strength(1).radius(d=> size(d.pop) + 10).iterations(1));
+        .force("x", d3.forceX().strength(0.5).x(d=> xScale(d[xInput])))
+        .force("y", d3.forceY().strength(0.1).y(d=> yScale(d[yInput])))
+        .force("collide", d3.forceCollide().strength(0.5).radius(d=> size(d.pop) + nodePadding).iterations(1));
 
       simulation.on('tick', function(){
-        node.attr("cx", d=> xScale(d[xInput]))
-            .attr("cy", d=> yScale(d[yInput]))
+        node.attr("cx", d=> d.x)
+            .attr("cy", d=> d.y)
+        // node.attr("cx", d=> xScale(d[xInput]))
+        //     .attr("cy", d=> yScale(d[yInput]))
       });
 
+      simulation.alphaTarget(0.3);
+
+      var t = d3.timer(function(elapsed) {
+          if (elapsed > 1000) {
+              simulation.alphaTarget(0); //After 1500ms, rest
+              console.log("Time Passed")
+              t.stop()
+          };
+      }, 1);
+
     }
 
-    function ticked() {
-      node.attr("cx", d=> xLonScale(d.state_x))
-          .attr("cy", d=> yLatScale(d.state_y))
-    }
-
-
-
-
-
-          //     // Features of the forces applied to the nodes
-          // var simulation = d3.forceSimulation()
-          //   // x and y positions depend on step
-          //   .force("x", d3.forceX().strength(.1).x( function(d){ 
-          //     return selectedX(d[selectedXinput]) 
-          //   }))
-          //   .force("y", d3.forceY().strength(.1).y( function(d){
-          //     return selectedY(d[selectedYinput])
-          //     // if (i > 1) {
-          //     //   return selectedY(d[selectedYinput]);
-          //     // } else {
-          //     //   return 200;
-          //     // }
-          //   }))
-          //   .force("center", d3.forceCenter().x(width / 2).y(height / 2)) // Attraction to the center of the svg area
-          //   //.force("charge", d3.forceManyBody().strength(10)) // Nodes are attracted one another of value is > 0
-          //   .force("collide", d3.forceCollide().strength(0.5).radius(d=> size(d.pop) + nodePadding).iterations(1)) // Force that avoids circle overlapping
-
-
-    // // draw plot using specified data
-    // function drawPlot(selectedData, selectedX, selectedXinput, selectedY, selectedYinput, selectedC, selectedCinput) {
-    //   // var circles = g.selectAll("circle")
-    //   //   .data(selectedData);
-
-    //   // // if filtered dataset has less circles than already existing, remove excess
-    //   // circles.exit()
-    //   //   .remove();
-
-    //   // // if filtered dataset has more circles than already existing, transition new ones in
-    //   // var new_circles = circles.enter()
-    //   //   .append("circle")
-    //   //   .attr('class', 'myCircle')
-    //   //   .attr("r", d=> size(d.pop))
-    //   //   .attr('cx', width/2)
-    //   //   .attr('cy', height/2)
-    //   //   .style("fill", "#dddddd");
-
-    //   // new_circles.merge(circles)
-    //   //   .transition().duration(1500)
-    //   //   // .attr("r", d=> size(d.pop)) // UNCOMMENT TO HAVE CIRCLES UPDATE POP
-    //   //   .attr('cx', d=> xLonScale(d.state_x))
-    //   //   .attr('cy', d=> yLatScale(d.state_y))
-    //   //   .style("fill", d=> color(d.cont_text));
- 
-    //   // // // set up labels
-    //   // // var circleLabel = g.selectAll("text")
-    //   // //   .data(data21)
-    //   // //   .enter()
-    //   // //   .append("text")
-    //   // //   .text(d=> d.state_short)
-    //   // //   .attr("class", "label")
-    //   // //   .style("text-anchor", "middle")
-    //   // //   .style("font-size", textSize)
-    //   // //   .attr('x', d=> xLonScale(d.state_x))
-    //   // //   .attr('y', d=> yLatScale(d.state_y));
-
-
-
-    //       // set up nodes and labels: all located at the center of the svg area to start
-          
-    //       var node = svg.append("g")
-    //         .selectAll("node")
-    //         .data(selectedData)
-    //         .enter()
-    //         .append("circle")
-    //         .attr('class', 'myNode')
-    //         .attr("r", d=> size(d.pop))
-    //         .attr("cx", width / 2)
-    //         .attr("cy", height / 2)
-    //         .style("fill", d=> color(d.cont_text));
-
-    //       // var label = svg.append("g")
-    //       //   .selectAll("labelText")
-    //       //   .data(data21)
-    //       //   .enter()
-    //       //   .append("text")
-    //       //   .text(d=> d.state_abbrev)
-    //       //   .attr("class", "label")
-    //       //   .style("text-anchor", "middle")
-    //       //   .style("font-size", textSize)
-    //       //   .attr('x', width / 2)
-    //       //   .attr('y', height / 2);
-
-
-
-    //       // Apply these forces to the nodes and update their positions.
-    //       // Once the force algorithm is happy with positions ('alpha' value is low enough), simulations will stop.
-    //       simulation
-    //         .nodes(selectedData)
-    //         // positions gradually update on tick
-    //         .on("tick", function(d){
-              
-    //           //// for step 1, fix positions of nodes so they aren't influenced by other forces
-    //           // if (i === 1) {
-    //           //   node.each(function(dd){
-    //           //     dd.x = xScales[i](dd[xInputs[i]]);
-    //           //     dd.y = dd.y
-    //           //   }) 
-    //           // }
-    //           /// could do other stepts but need to figure out how to include transitions
-
-    //           node
-    //               .attr("cx", function(d){ return d.x; })
-    //               .attr("cy", function(d){ return d.y; });
-    //           // label
-    //           //     .attr("x", function(d){ return d.x; })
-    //           //     .attr("y", function(d){ return d.y + textSize / 2 - 2; }); // adds half of text size to vertically center in bubbles
-    //         }); // end on tick
-
-    //       // update node colors
-    //       node.transition().style("fill", d=> selectedC(d[selectedCinput]));
-
-
-
-    // }; // end drawPlot
-
-
-
-    // update plot with specified year
-    // function update(newYear, newX, newXinput, newY, newYinput, newC, newCinput) {
-    //   // filter data set and redraw plot
-    //   var newData = data_all
-    //     .filter(({year}) => year === newYear);
-
-    //   drawPlot(newData, newX, newXinput, newY, newYinput, newC, newCinput);
-    // };
-
-
-
+    // // x and y positions for first draw (might be able to delete the .on on initial simulation above?)
+    // function tickedFirst() {
+    //     node.attr("cx", d=> d.x)
+    //         .attr("cy", d=> d.y)
+    //   // node.attr("cx", d=> xLonScale(d.state_x))
+    //   //     .attr("cy", d=> yLatScale(d.state_y))
+    // }
 
 
 
@@ -401,11 +293,15 @@ d3.queue()
         // .offset(innerWidth < 900 ? innerHeight - 30 : 200)
         .on('active', function(i){
           
+          /// testing
+          var data75 = data_all
+            .filter(({year}) => year === 1975);
           // STEPS (TURN WORD WRAP OFF FOR EASIER VIEW)
 
           //i             0              1                  2             3             4             5             6             7             8
           //year
           var dataYear =  [2021,         2021,              2021,         1975,         1995,         2010,         2010,         2011,         2021];
+          var dataTest =  [data21,         data21,              data21,         data75,         1995,         2010,         2010,         2011,         2021];
           //map
           var map =       ['FALSE',      'FALSE',           'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE'];
           //x
@@ -422,8 +318,11 @@ d3.queue()
           var newData = data_all
             .filter(({year}) => year === dataYear[i]);
 
+   
+          
+          /// test animated changes with data staying constant
           // update bubbles
-          update(newData,
+          update(dataTest[i],
                  xScales[i],
                  xInputs[i],
                  yScales[i],
@@ -444,13 +343,14 @@ d3.queue()
 
           // basemap - show or hide depending on step
           if (map[i] === 'FALSE') {
-            basemap.style('display', 'none');
+            basemap.transition().style('opacity', 0);
             //d3.selectAll('.myCircle').style('display', 'none');
             //node.style('opacity', 1);
             //label.style('opacity', 1);
             yearLabel.style('opacity', 0)
           } else if (map[i] === 'TRUE') {
-            basemap.style('display', 'block');
+            basemap.style('display', 'block')
+              .transition().style('opacity', 1);
             //d3.selectAll('.myCircle').style('display', 'block');
             //node.style('opacity', 0);
             //label.style('opacity', 0);
