@@ -15,7 +15,8 @@ d3.queue()
       data.year = +data.year;
       data.fips = +data.fips;
       data.pop = +data.pop;
-      data.government_cont = +data.government_cont;
+      data.cont = +data.government_cont;
+      data.cont_text = data.government_cont_text;
       data.govparty_c = +data.govparty_c;
       data.hs_cont_alt = +data.hs_cont_alt;
       data.sen_cont_alt = +data.sen_cont_alt;
@@ -48,9 +49,6 @@ d3.queue()
     // 700 x 440 is roughly the map aspect ratio so bubbles end up centered in states
     var width = 700;
     var height = 450;
-
-    var alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-    var nodes = data21;
 
     var r = 40;
     var textSize = 10;
@@ -174,9 +172,10 @@ d3.queue()
       .attr("y", 0)
       .style('display', 'none'); //margin.top);
 
-    // add g (after basemap so it goes on top)
+    // add g after basemap so it goes on top
     var g = svg.append('g');
-    var node = g.append("g").attr("stroke", "#fff").attr("stroke-width", 1.5).selectAll(".node");
+    var node = g.append("g").attr("stroke", "#fff").attr("stroke-width", 1).selectAll(".node");
+    var nodes = data21;
 
     var simulation = d3.forceSimulation(nodes)
       .force("charge", d3.forceManyBody().strength(-150))
@@ -186,34 +185,45 @@ d3.queue()
       .alphaTarget(1)
       .on("tick", ticked);
 
-    function restart(nodes) {
+    function update(nodes,
+                    xScale,
+                    xInput,
+                    yScale,
+                    yInput,
+                    cScale,
+                    cInput) { 
 
       // transition
       var t = d3.transition()
           .duration(750);
 
       // Apply the general update pattern to the nodes.
+
       node = node.data(nodes, d=> d.state);
 
       node.exit()
-          //.style("fill", "#b26745")
         .transition(t)
         .attr("r", 1e-6)
         .remove();
 
       node
         .transition(t)
-        .style("fill", d=> color(d.government_cont_text))
+        .style("fill", d=> cScale(d[cInput]))
         .attr("r", d=> size(d.pop));
 
       node = node.enter().append("circle")
-        .style("fill", d=> color(d.government_cont_text))
+        .style("fill", d=> cScale(d[cInput]))
         .attr("r", d=> size(d.pop))
         .merge(node);
 
       // Update and restart the simulation.
       simulation.nodes(nodes)
         .force("collide", d3.forceCollide().strength(1).radius(d=> size(d.pop) + 10).iterations(1));
+
+      simulation.on('tick', function(){
+        node.attr("cx", d=> xScale(d[xInput]))
+            .attr("cy", d=> yScale(d[yInput]))
+      });
 
     }
 
@@ -268,7 +278,7 @@ d3.queue()
     //   //   // .attr("r", d=> size(d.pop)) // UNCOMMENT TO HAVE CIRCLES UPDATE POP
     //   //   .attr('cx', d=> xLonScale(d.state_x))
     //   //   .attr('cy', d=> yLatScale(d.state_y))
-    //   //   .style("fill", d=> color(d.government_cont_text));
+    //   //   .style("fill", d=> color(d.cont_text));
  
     //   // // // set up labels
     //   // // var circleLabel = g.selectAll("text")
@@ -295,7 +305,7 @@ d3.queue()
     //         .attr("r", d=> size(d.pop))
     //         .attr("cx", width / 2)
     //         .attr("cy", height / 2)
-    //         .style("fill", d=> color(d.government_cont_text));
+    //         .style("fill", d=> color(d.cont_text));
 
     //       // var label = svg.append("g")
     //       //   .selectAll("labelText")
@@ -345,13 +355,13 @@ d3.queue()
 
 
     // update plot with specified year
-    function update(newYear, newX, newXinput, newY, newYinput, newC, newCinput) {
-      // filter data set and redraw plot
-      var newData = data_all
-        .filter(({year}) => year === newYear);
+    // function update(newYear, newX, newXinput, newY, newYinput, newC, newCinput) {
+    //   // filter data set and redraw plot
+    //   var newData = data_all
+    //     .filter(({year}) => year === newYear);
 
-      drawPlot(newData, newX, newXinput, newY, newYinput, newC, newCinput);
-    };
+    //   drawPlot(newData, newX, newXinput, newY, newYinput, newC, newCinput);
+    // };
 
 
 
@@ -392,25 +402,34 @@ d3.queue()
         .on('active', function(i){
           
           // STEPS (TURN WORD WRAP OFF FOR EASIER VIEW)
-          //i             0                         1                        2            3                       4
-          //x
-          var xScales =   [xContScale,              xVoteScale,              xLonScale,   xLonScale,    xContScale,             xVoteScale,        xVoteScale,             xContScale,             xContScale];
-          var xInputs =   ['government_cont_text',  'pres_vote_rep',         'state_x',   'state_x',    'government_cont_text', 'pres_vote_rep',   'pres_vote_rep',        'government_cont_text', 'government_cont_text'];
-          //y
-          var yScales =   [dummyScale,              dummyScale,              yLatScale,   yLatScale,    dummyScale,             dummyScale,        dummyScale,             dummyScale,             dummyScale];
-          var yInputs =   [0,                       0,                       'state_y',   'state_y',    'state_y',              'state_y',         'state_y',              'state_y',              'state_y']; // figure out why /4 instead of /2
-          //color
-          var cScales =   [color,                   color,                   xLonScale,   xLonScale,    xContScale,             xVoteScale,        xVoteScale,             xContScale,             xContScale];
-          var cInputs =   ['government_cont_text',  'government_cont_text',  'state_x',   'state_x',    'government_cont_text', 'pres_vote_rep',   'pres_vote_rep',        'government_cont_text', 'government_cont_text'];          var map =       ['FALSE',                 'FALSE',                 'TRUE',      'TRUE',       'TRUE',                 'TRUE',            'TRUE',                 'TRUE',                 'TRUE'];
-          //year
-          var dataYear =  [2021,                    2021,                    2021,        1975,         1995,                   2010,              2010,                    2011,                   2021];
 
-          // update bubble color based on year
-          //update(dataYear[i], xScales[i], xInputs[i], yScales[i], yInputs[i], cScales[i], cInputs[i]);
+          //i             0              1                  2             3             4             5             6             7             8
+          //year
+          var dataYear =  [2021,         2021,              2021,         1975,         1995,         2010,         2010,         2011,         2021];
+          //map
+          var map =       ['FALSE',      'FALSE',           'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE'];
+          //x
+          var xScales =   [xContScale,   xVoteScale,        xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale];
+          var xInputs =   ['cont_text',  'pres_vote_rep',   'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x'];
+          //y
+          var yScales =   [dummyScale,   dummyScale,        yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale];
+          var yInputs =   ['state_y',    'state_y',         'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y'];
+          //color
+          var cScales =   [color,        color,             color,        color,        color,        color,        color,        color,        color];
+          var cInputs =   ['cont_text',  'cont_text',       'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text'];          
+
+          // filter data to desired year
           var newData = data_all
             .filter(({year}) => year === dataYear[i]);
 
-          restart(newData);
+          // update bubbles
+          update(newData,
+                 xScales[i],
+                 xInputs[i],
+                 yScales[i],
+                 yInputs[i],
+                 cScales[i],
+                 cInputs[i]);
 
           // node
           //   .data(data21)
