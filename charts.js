@@ -183,6 +183,7 @@ d3.queue()
     var label = g.append("g")
       .selectAll("labelText");
       //.attr("class", "label")
+
     
     // update bubbles and labels using parameters depending on step of scrollytelling
     function update(nodes,
@@ -202,32 +203,28 @@ d3.queue()
 
       // Apply the general update pattern to the nodes
 
-      node = node
-        .data(nodes, d=> d.state); /// what is d.state doing?
+      node = node.data(nodes, d=> d.state); /// what is d.state doing?
 
-      node.exit()
-        .transition(t)
-        .attr("r", 1000) /// testing if bubbles are being removed
-        .remove();
+      node.exit().remove();
 
+      // update the color and radius
       node
         .transition(t)
         .style("fill", d=> cScale(d[cInput]))
         .attr("r", d=> size(d.pop));
 
       node = node.enter().append("circle")
+        // initial color
         .style("fill", d=> cScale(d[cInput]))
         .attr("r", d=> size(d.pop))
         .merge(node);
+        // removing .merge results in the map bubbles SOMETIMES working???????? could I remove merge for steps 2 and on?
 
       // Apply the general update pattern to the labels
 
-      label = label
-        .data(nodes, d=> d.state); /// what is d.state doing?
+      label = label.data(nodes, d=> d.state); /// what is d.state doing?
 
-      label.exit()
-        .transition(t)
-        .remove();
+      label.exit().remove();
 
       label
         .transition(t)
@@ -268,6 +265,61 @@ d3.queue()
       }, 1); // start timer after 1ms
 
     } // end update function
+
+    // run update for each map year just to load each year of data (won't actually get displayed)
+
+      var data75 = data_all.filter(({year}) => year === 1975);
+      var data95 = data_all.filter(({year}) => year === 1995);
+      var data10 = data_all.filter(({year}) => year === 2010);
+      var data11 = data_all.filter(({year}) => year === 2011);
+      
+      update(data75,
+              xLonScale,
+              'state_x',
+              yLatScale,
+              'state_y',
+              color,
+              'cont_text',
+              0.1,
+              0.1,
+              0,
+              3);
+
+      update(data95,
+              xLonScale,
+              'state_x',
+              yLatScale,
+              'state_y',
+              color,
+              'cont_text',
+              0.1,
+              0.1,
+              0,
+              3);
+
+      update(data10,
+              xLonScale,
+              'state_x',
+              yLatScale,
+              'state_y',
+              color,
+              'cont_text',
+              0.1,
+              0.1,
+              0,
+              3);
+
+      update(data11,
+              xLonScale,
+              'state_x',
+              yLatScale,
+              'state_y',
+              color,
+              'cont_text',
+              0.1,
+              0.1,
+              0,
+              3);
 
     // LABELING
 
