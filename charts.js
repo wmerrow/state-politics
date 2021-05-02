@@ -184,19 +184,20 @@ d3.queue()
       .selectAll("labelText");
       //.attr("class", "label")
     
-    // nodes can be empty to start since they get populated on scroll
-    var initialNodes = [];
-    var simulation = d3.forceSimulation(initialNodes);
-
+    // update bubbles and labels using parameters depending on step of scrollytelling
     function update(nodes,
                     xScale,
                     xInput,
                     yScale,
                     yInput,
                     cScale,
-                    cInput) { 
-      
-      // transition ///(keep this line within update, not sure why)
+                    cInput,
+                    xStr,
+                    yStr,
+                    collStr,
+                    i) { 
+
+      // transition /// keep this line within update, not sure why
       var t = d3.transition().duration(750);
 
       // Apply the general update pattern to the nodes
@@ -240,26 +241,23 @@ d3.queue()
         .style("font-size", textSize)
         .merge(label);
 
-
-      // Update and restart the simulation.
-      simulation.nodes(nodes)
-        .force("x", d3.forceX().strength(0.1).x(d=> xScale(d[xInput])))
-        .force("y", d3.forceY().strength(0.1).y(d=> yScale(d[yInput])))
+      // Create the simulation
+      // Defining simulation outside of update results in x and y not updating if you wait 5 seconds, unsure why
+      var simulation = d3.forceSimulation(nodes).nodes(nodes)
+        .force("x", d3.forceX().strength(xStr).x(d=> xScale(d[xInput])))
+        .force("y", d3.forceY().strength(yStr).y(d=> yScale(d[yInput])))
         // avoid collision - change strength and number of iterations to adjust
-        .force("collide", d3.forceCollide().strength(1).radius(d=> size(d.pop) + nodePadding).iterations(10));
-
-      simulation.on('tick', function(){
-        node
-          //.transition().duration(50) /// transition on each tick to slow down bubbles, but this messes with bubble steps for some reason
-          .attr("cx", d=> d.x)
-          .attr("cy", d=> d.y);
-        label
-          //.transition().duration(50) /// transition on each tick to slow down bubbles, but this messes with bubble steps for some reason
-          .attr("x", d=> d.x)
-          .attr("y", d=> d.y + textSize / 2 - 2); // adds half of text size to vertically center in bubbles
-      });
-
-      simulation.alphaTarget(1);
+        .force("collide", d3.forceCollide().strength(collStr).radius(d=> size(d.pop) + nodePadding).iterations(10))
+        .on('tick', function(){
+          node
+            //.transition().duration(50) /// transition on each tick to slow down bubbles, but this messes with bubble steps for some reason
+            .attr("cx", d=> d.x)
+            .attr("cy", d=> d.y);
+          label
+            .attr("x", d=> d.x)
+            .attr("y", d=> d.y + textSize / 2 - 2); // adds half of text size to vertically center in bubbles
+        })
+        .alphaTarget(1);
 
       var t = d3.timer(function(elapsed) {
           if (elapsed > 1000) {
@@ -269,7 +267,7 @@ d3.queue()
           };
       }, 1); // start timer after 1ms
 
-    }
+    } // end update function
 
     // LABELING
 
@@ -326,10 +324,28 @@ d3.queue()
           //color
           var cScales =   [color,        color,             color,        color,        color,        color,        color,        color,        color];
           var cInputs =   ['cont_text',  'cont_text',       'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text'];          
+          //force strs (x, y, collision)
+          var xStrs =     [0.1,          0.1,               0.1,          0.1,           0.1,         0.1,          0.1,          0.1,          0.1];
+          var yStrs =     [0.1,          0.1,               0.1,          0.1,           0.1,         0.1,          0.1,          0.1,          0.1];
+          var collStrs =  [1,            1,                 0,            0,             0,           0,            0,            0,            0];
+
+          /// for some reason there are residual strengths left over from previous view which cause views to appear different depending on strengths of view you were on before
+          
 
           // filter data to desired year
           var newData = data_all
             .filter(({year}) => year === dataYear[i]);
+          
+          ///could try doing a data join to add new year's data to existing object, instead of overwriting entire object
+          ///***or could try updating all the data in the background so it's all joined
+
+          ///testing
+          // var newData = [];
+          // if (i > 0) {
+          //   newData = data_all.filter(({year}) => year === dataYear[i]);
+          // } else {
+          //   newData = data_all;
+          // };
 
           // update bubbles
           update(newData,
@@ -338,20 +354,20 @@ d3.queue()
                  yScales[i],
                  yInputs[i],
                  cScales[i],
-                 cInputs[i]);
+                 cInputs[i],
+                 xStrs[i],
+                 yStrs[i],
+                 collStrs[i],
+                 i);
 
-          // node
-          //   .data(data21)
-          //   .attr("cx", function(d){ return d.x; })
-          //   .attr("cy", function(d){ return d.y; })
-
+          // show or hide header labels
           if (i === 0) {
             d3.selectAll('.headerLabel').style('opacity', 1);
           } else {
             d3.selectAll('.headerLabel').style('opacity', 0);
           }
 
-          // basemap - show or hide depending on step
+          // show or hide basemap
           if (map[i] === 'FALSE') {
             basemap.transition().style('opacity', 0);
             //d3.selectAll('.myCircle').style('display', 'none');
@@ -367,7 +383,7 @@ d3.queue()
             yearLabel.style('opacity', 1)
           };
 
-          // update year label
+          // update year label /// need to add interpolation transition effect
           yearLabel.transition().text(dataYear[i]);
 
         }); // end 'active' listener
