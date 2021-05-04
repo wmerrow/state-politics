@@ -266,60 +266,60 @@ d3.queue()
     } // end update function
 
 
-    // run update for each map year just to load each year of data to deal with bubble position update issue
+    // // run update for each map year just to load each year of data to deal with bubble position update issue
 
-      var data75 = data_all.filter(({year}) => year === 1975);
-      var data95 = data_all.filter(({year}) => year === 1995);
-      var data10 = data_all.filter(({year}) => year === 2010);
-      var data11 = data_all.filter(({year}) => year === 2011);
+    //   var data75 = data_all.filter(({year}) => year === 1975);
+    //   var data95 = data_all.filter(({year}) => year === 1995);
+    //   var data10 = data_all.filter(({year}) => year === 2010);
+    //   var data11 = data_all.filter(({year}) => year === 2011);
 
-      update(data75,
-              xLonScale,
-              'state_x',
-              yLatScale,
-              'state_y',
-              color,
-              'cont_text',
-              0.1,
-              0.1,
-              0,
-              3);
+    //   update(data75,
+    //           xLonScale,
+    //           'state_x',
+    //           yLatScale,
+    //           'state_y',
+    //           color,
+    //           'cont_text',
+    //           0.1,
+    //           0.1,
+    //           0,
+    //           3);
 
-      update(data95,
-              xLonScale,
-              'state_x',
-              yLatScale,
-              'state_y',
-              color,
-              'cont_text',
-              0.1,
-              0.1,
-              0,
-              3);
+    //   update(data95,
+    //           xLonScale,
+    //           'state_x',
+    //           yLatScale,
+    //           'state_y',
+    //           color,
+    //           'cont_text',
+    //           0.1,
+    //           0.1,
+    //           0,
+    //           3);
 
-      update(data10,
-              xLonScale,
-              'state_x',
-              yLatScale,
-              'state_y',
-              color,
-              'cont_text',
-              0.1,
-              0.1,
-              0,
-              3);
+    //   update(data10,
+    //           xLonScale,
+    //           'state_x',
+    //           yLatScale,
+    //           'state_y',
+    //           color,
+    //           'cont_text',
+    //           0.1,
+    //           0.1,
+    //           0,
+    //           3);
 
-      update(data11,
-              xLonScale,
-              'state_x',
-              yLatScale,
-              'state_y',
-              color,
-              'cont_text',
-              0.1,
-              0.1,
-              0,
-              3);
+    //   update(data11,
+    //           xLonScale,
+    //           'state_x',
+    //           yLatScale,
+    //           'state_y',
+    //           color,
+    //           'cont_text',
+    //           0.1,
+    //           0.1,
+    //           0,
+    //           3);
 
     // LABELING
 
