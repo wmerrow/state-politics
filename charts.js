@@ -8,7 +8,7 @@ d3.queue()
   var data_all = data_all
     .filter(({state}) => state !== "Nebraska");
 
-  // convert columns to numeric
+  // convert columns to numeric and rename cont columns for easier reference
   data_all.forEach(function(data){
       data.year = +data.year;
       data.fips = +data.fips;
@@ -45,33 +45,44 @@ d3.queue()
     // console.log(width, height);
 
     // 700 x 440 is roughly the map aspect ratio so bubbles end up centered in states
-    var width = 700;
-    var height = 450;
+    var scalar = 1.37;
+    var width = 700 * scalar;
+    var height = 450 * scalar;
 
     var r = 40;
-    var textSize = 10;
+    var textSize = 11;
     var nodePadding = 1;
 
-    var contCats = ['NA', 'full_dem', 'lean_dem', 'lean_rep', 'full_rep'];
+    var contCats = ['full_dem', 'lean_dem', 'lean_rep', 'full_rep', 'NA'];
+    var contText = ['Dem. trifecta', '2D 1R', '1D 2R', 'Rep. trifecta', 'Split'];
+    var contPositions = [0.25, 0.5, 0.5, 0.75, 0.5];
+    // var contPositions = [0.15, 0.4, 0.6, 0.85, 0.5];
 
     // color scale for control categories
     var color = d3.scaleOrdinal()
       .domain(contCats)
-      .range(['#dddddd', '#4393c3', '#92c5de', '#f4a582', '#d6604d']);
+      .range(['#0078c2', '#a8a8a8', '#a8a8a8', '#d6422b', '#dddddd']);
+      // .range(['#0078c2', '#92c5de', '#f4a582', '#d6422b', '#dddddd']);
+      //.range(['#4393c3', '#92c5de', '#f4a582', '#d6604d', '#dddddd']);
     // var colortest = d3.scaleOrdinal()
     //   .domain(contCats)
-    //   .range(['#dddddd', '#358463', '#795573', '#478149', '#435793']);
+    //   .range(['#358463', '#795573', '#478149', '#435793', '#dddddd']);
 
     // size scale
     var pop_max = d3.max(data21, function(d) { return d.pop; });
+    var pop_min = d3.min(data21, function(d) { return d.pop; });
     var size = d3.scaleSqrt()
       .domain([0, pop_max])
-      .range([0, 30]); // max radius
+      .range([0, 30 * scalar]); // max radius
+    var sizeText = d3.scaleLinear()
+      .domain([pop_min, pop_min*8])
+      .range([8, 10]) // min and max font size
+      .clamp(true); // specifies that values beyond max domain should not be larger than max range
 
     // x scale for longitude
     var xLonScale = d3.scaleLinear()
       .domain([0, 1])
-      .range([0, 700]);
+      .range([0, width]);
     // y scale for latitude
     var yLatScale = d3.scaleLinear()
       .domain([0, 1])
@@ -79,7 +90,7 @@ d3.queue()
     // x scale for control
     var xContScale = d3.scaleOrdinal()
       .domain(contCats)
-      .range([width * 0.5,  width * 0.15,  width * 0.4,  width * 0.6,  width * 0.85]);
+      .range(contPositions.map(function(x) { return x * width; })); // a new array multiplying each element of contPositions by width 
     // x scale for pres vote
     var xVoteScale = d3.scaleLinear()
       .domain([0.2, 0.8])
@@ -182,7 +193,6 @@ d3.queue()
 
     var label = g.append("g")
       .selectAll("labelText");
-      //.attr("class", "label")
 
     var simulation = d3.forceSimulation();
     
@@ -228,12 +238,16 @@ d3.queue()
         .transition(t)
         .text(d=> d.state_abbrev)
         .style("text-anchor", "middle")
-        .style("font-size", textSize);
+        .style("font-size", d=> sizeText(d.pop))
+        // .style("font-size", textSize)
+        .style("stroke", d=> cScale(d[cInput]));
 
       label = label.enter().append("text")
+        .attr("class", "label")
         .text(d=> d.state_abbrev)
-        .style("text-anchor", "middle")
-        .style("font-size", textSize)
+        .style("font-size", d=> sizeText(d.pop))
+        // .style("font-size", textSize)
+        .style("stroke", d=> cScale(d[cInput]))
         .merge(label);
 
       // update the simulation
@@ -323,19 +337,16 @@ d3.queue()
 
     // LABELING
 
-    var contText = ['All Dem', '2D 1R', '1D 2R', 'All Rep'];
-    var contPositions = [0.1, 0.35, 0.55, 0.8];
-
     // add control labels
     var contLabel = svg.append("g").selectAll('.headerLabel')
-      .data(contPositions).enter()
+      .data(contPositions.slice(0,4)).enter()
       .append('text')
       .text(function(d, i) {
-          return contText[i]
+          return contText.slice(0,4)[i];
       })
       .attr('class', 'headerLabel')
       .attr('x', d=> width * d)
-      .attr('y', height * 0.25);
+      .attr('y', height * 0.12);
 
     // add year label
     var yearLabel = svg.append("g")

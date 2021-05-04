@@ -1,6 +1,6 @@
 
 body{
-  max-width: 900px;
+  max-width: 1024px;
   margin: 0px auto;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
@@ -46,10 +46,7 @@ h1{
 @media (max-width: 3000px)  {
 
   h1{
-    margin-bottom: 30px;
-    margin-top: 50px;
-    margin-left: 0px;
-    margin-right: 0px;
+    margin: 50px 25px 30px 25px;
     text-align: left;
   }
 
@@ -59,22 +56,22 @@ h1{
 
   p{
     font-size: 18px;
+    margin: 10px 25px 10px 25px;
   }
 
   .content-well {
-    max-width: 650px;
+    max-width: 700px;
     margin: auto;
   }
 
   #bylineContainer {
-    margin-bottom: 30px;
+    margin: 0px 25px 30px 25px;
   }
 
   .byline {
     font-size: 14px;
     color: #aaaaaa;
-    margin-top: 3px;
-    margin-bottom: 3px;
+    margin: 3px 0px 3px 0px;
   }
 
   #graph{
@@ -93,8 +90,8 @@ h1{
   #sections > div{
     background: rgba(255,255,255,.94);
     padding: 10px;
-    border-top: 1px solid;
-    border-bottom: 1px solid;
+    border-top: 1px solid #bbbbbb;
+    border-bottom: 1px solid #bbbbbb;
     margin-bottom: 80vh;
   }
 
@@ -116,7 +113,7 @@ h1{
   }
 
   figure {
-    margin: 0px;
+    margin: 0px 25px 0px 25px;
   }
 
   .attribution {
@@ -138,9 +135,15 @@ svg{
   background-color: #ffffff;
 }
 
-label{
+.label{
   text-anchor: middle;
-  fill: red;
+  font-weight: 400;
+  fill: white;
+  /*stroke color set in charts.js*/
+  paint-order: stroke;
+  stroke-width: 2px;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
 }
 
 .headerLabel{
