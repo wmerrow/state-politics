@@ -184,7 +184,7 @@ d3.queue()
       .selectAll("labelText");
       //.attr("class", "label")
 
-    var simulation = d3.forceSimulation();
+    //var simulation = d3.forceSimulation();
     
     // update bubbles and labels using parameters depending on step of scrollytelling
     function update(nodes,
@@ -236,8 +236,8 @@ d3.queue()
         .style("font-size", textSize)
         .merge(label);
 
-      // update the simulation
-      simulation.nodes(nodes)
+      // create the simulation
+      var simulation = d3.forceSimulation().nodes(nodes)
         .force("x", d3.forceX().strength(xStr).x(d=> xScale(d[xInput])))
         .force("y", d3.forceY().strength(yStr).y(d=> yScale(d[yInput])))
         // avoid collision - change strength and number of iterations to adjust
