@@ -4,9 +4,9 @@ library(dplyr)
 library(reshape2)
 library(ggplot2)
 library(tidyr)
-library(RColorBrewer)
-library(foreign)
-
+library(stringr)
+#library(RColorBrewer)
+#library(foreign)
 
 # PARTY CONTROL (1934-2015 although blank after 2011)
 
@@ -148,11 +148,12 @@ str(pc2)
 pc <- rbind(pc1, pc2)
 
 # add text field for gov control
-pc$government_cont_text[pc$government_cont > 0.99] <- "full_dem"
-pc$government_cont_text[pc$government_cont < 0.01] <- "full_rep"
-pc$government_cont_text[pc$government_cont < 0.8 & pc$government_cont > 0.5] <- "lean_dem"
-pc$government_cont_text[pc$government_cont > 0.2 & pc$government_cont < 0.5] <- "lean_rep"
-### need to fix above to handle .83s and .16s and .5s
+pc$cont_text[pc$government_cont > 0.99] <- "full_dem"
+pc$cont_text[pc$government_cont < 0.01] <- "full_rep"
+pc$cont_text[pc$government_cont < 0.99 & pc$government_cont > 0.01] <- "split"
+#pc$cont_text[pc$government_cont < 0.8 & pc$government_cont > 0.5] <- "lean_dem"
+#pc$cont_text[pc$government_cont > 0.2 & pc$government_cont < 0.5] <- "lean_rep"
+### could fix above to handle edge cases resulting from tie in legislature (.83, .16, .5)
 
 # POPULATION (1969-2010)
 
@@ -221,37 +222,43 @@ str(pop)
 pv <- read.csv(file = "data/source/pres_vote/1976-2020-president.csv", header = TRUE, stringsAsFactors = FALSE)
 str(pv)
 
-# filter
+# filter to 2020 election
 pv <- pv %>% filter(year == 2020)
-# filtering to Republican since each row is a party (could cast instead but don't need other parties)
-pv <- pv %>% filter(party_simplified == "REPUBLICAN")
-str(pv)
-
-# create column for Republican vote (must be done after filtering to Republican)
-pv$pres_vote_rep <- pv$candidatevotes / pv$totalvotes
-str(pv)
-
-# change year from 2020 to 2021 since years represent year of session not year of election
+# change year from 2020 to 2021 since years in other data represent year of session not year of election
 pv$year <- pv$year + 1
 pv$year <- as.integer(pv$year)
 str(pv)
-
 # select desired columns
 pv <- pv %>% select(year,
                     state_fips,
-                    pres_vote_rep
+                    party_simplified,
+                    candidatevotes,
+                    totalvotes
 )
 str(pv)
-
-# change column names
-colnames(pv) <- c("year", "fips", "pres_vote_rep")
+# calculate vote share
+pv$pres_share <- pv$candidatevotes / pv$totalvotes
 str(pv)
-
-
-# IDEOLOGY
-
-# test <- read.dta(file = "data/source/ideology/caughey_warshaw_summary.dta")
-# str(test)
+# create separate state-level dataframes for Rep and Dem (don't need other parties)
+pvD <- pv %>% filter(party_simplified == "DEMOCRAT")
+pvR <- pv %>% filter(party_simplified == "REPUBLICAN")
+# select desired columns
+pvD <- pvD %>% select(year,
+                      state_fips,
+                      pres_share
+)
+pvR <- pvR %>% select(year,
+                      state_fips,
+                      pres_share
+)
+# rename columns
+colnames(pvD) <- c("year", "fips", "pres_share_dem")
+colnames(pvR) <- c("year", "fips", "pres_share_rep")
+# join Rep and Dem
+pv <- left_join(pvD, pvR, by = c("fips", "year"))
+str(pv)
+# calculate Rep margin over Dem
+pv$pres_marg_rep <- pv$pres_share_rep - pv$pres_share_dem
 
 
 # COMBINE AND OUTPUT
@@ -291,45 +298,28 @@ str(sp)
 all <- left_join(all, sp, by = "state")
 str(all)
 
+# aggregate by control-year and calculate sum for each control-year
+ag <- all
+ag$cont_text_year <- paste0(ag$cont_text, ag$year)
+ag <- ag %>%
+  group_by(cont_text_year) %>%
+  summarise(pop = sum(pop))
+ag$year <- as.integer(str_sub(ag$cont_text_year, -4, -1))
+ag$cont_text <- str_sub(ag$cont_text_year, 1, -5)
+# select desired columns
+ag <- ag %>% select(year,
+                    cont_text,
+                    pop
+)
+# aggregate by year and calculate sum for each year
+ag_yr <- ag %>%
+  group_by(year) %>%
+  summarise(pop_yr = sum(pop))
+# join control-year sums with year sums
+ag <- left_join(ag, ag_yr, by = "year")
+# calculate percent for each control-year
+ag$pop_pct <- ag$pop / ag$pop_yr
+
 # output
 write.csv(all, "data/output/party_control.csv", row.names = FALSE)
-
-
-# VISUALIZATION
-
-# dataframe for visualization
-allv <- all
-allv <- arrange(allv, desc(state))
-
-# create categorical variable for govt control
-allv$government_cont_cat[allv$government_cont > 0.99] <- "Full D control"
-allv$government_cont_cat[allv$government_cont < 0.01] <- "Full R control"
-#allv$government_cont_cat[allv$government_cont > 0.01 & allv$government_cont < 0.99] <- "Split"
-allv$government_cont_cat[allv$government_cont < 0.99 & allv$government_cont > 0.5] <- "Partial D control"
-allv$government_cont_cat[allv$government_cont > 0.01 & allv$government_cont < 0.5] <- "Partial R control"
-allv$government_cont_cat[allv$government_cont == 0.5] <- "Even"
-
-# set factor level order
-allv$government_cont_cat <- factor(allv$government_cont_cat, levels = c("Full D control", "Partial D control", "Even", "Partial R control", "Full R control"))
-
-# stacked bars
-bars <- ggplot(allv, aes(fill=government_cont_cat, y=pop, x=year)) + 
-  #geom_bar(position="stack", stat="identity")
-  geom_bar(position="fill", stat="identity") 
-
-bars + scale_fill_manual(values=c("#0571b0", "#92c5de", "#cccccc", "#f4a582", "#ca0020"))
-
-# stacked bars by state
-bars <- ggplot(allv, aes(fill=government_cont, color=government_cont, y=pop, x=year)) + 
-  geom_bar(position="stack", stat="identity")
-#geom_bar(position="fill", stat="identity") 
-
-bars + scale_fill_gradient2(
-  low = "#ca0020",
-  mid = "#cccccc",
-  high = "#0571b0",
-  midpoint = 0.5
-) + scale_color_gradient(
-  low = "white",
-  high = "white"
-)
+write.csv(ag, "data/output/party_control_aggregated.csv", row.names = FALSE)

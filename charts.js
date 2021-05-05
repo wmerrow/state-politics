@@ -1,20 +1,20 @@
 d3.queue()
 .defer(d3.csv, "data/output/party_control.csv")
-//.defer(d3.csv, "data/parties_first-last.csv")
-.await(function(error, data_all) {
+.defer(d3.csv, "data/output/party_control_aggregated.csv")
+.await(function(error, data_all, data_all_ag) {
   if (error) throw error;
 
   /// remove nebraska for now
-  var data_all = data_all
-    .filter(({state}) => state !== "Nebraska");
+  var data_all = data_all.filter(({state}) => state !== "Nebraska");
+  var data_all_ag = data_all_ag.filter(({cont_text}) => cont_text !== "NA");
 
-  // convert columns to numeric and rename cont columns for easier reference
+  // convert columns to numeric
   data_all.forEach(function(data){
       data.year = +data.year;
       data.fips = +data.fips;
       data.pop = +data.pop;
-      data.cont = +data.government_cont;
-      data.cont_text = data.government_cont_text;
+      data.government_cont = +data.government_cont;
+      data.cont_text = data.cont_text;
       data.govparty_c = +data.govparty_c;
       data.hs_cont_alt = +data.hs_cont_alt;
       data.sen_cont_alt = +data.sen_cont_alt;
@@ -22,13 +22,23 @@ d3.queue()
       data.hs_rep_prop_all = +data.hs_rep_prop_all;
       data.sen_dem_prop_all = +data.sen_dem_prop_all;
       data.sen_rep_prop_all = +data.sen_rep_prop_all;
-      data.pres_vote_rep = +data.pres_vote_rep;
+      data.pres_share_dem = +data.pres_share_dem;
+      data.pres_share_rep = +data.pres_share_rep;
+      data.pres_marg_rep = +data.pres_marg_rep;
     })
-  console.log(data_all);
+
+    data_all_ag.forEach(function(data){
+      data.year = +data.year;
+      data.pop = +data.pop;
+      data.pop_pct = +data.pop_pct;
+      data.pop_yr = +data.pop_yr;
+      data.cont_text = data.cont_text;
+    })
 
   // filter to 2021
-  var data21 = data_all.filter(({year}) => year === 2021);
-
+  var data_all_2021 = data_all.filter(({year}) => year === 2021);
+  var data_all_ag_2021 = data_all_ag.filter(({year}) => year === 2021);
+console.log(data_all_ag_2021);
   var oldWidth = 0
 
   function render(){
@@ -53,31 +63,65 @@ d3.queue()
     var textSize = 11;
     var nodePadding = 1;
 
-    var contCats = ['full_dem', 'lean_dem', 'lean_rep', 'full_rep', 'NA'];
-    var contText = ['Dem. trifecta', '2D 1R', '1D 2R', 'Rep. trifecta', 'Split'];
-    var contPositions = [0.25, 0.5, 0.5, 0.75, 0.5];
+    // var contMeta = {
+    //   "full_dem": {
+    //     "label": "Democrat trifecta",
+    //     "position": 0.25
+    //   },
+    //   "split": {
+    //     "label": "Split control",
+    //     "position": 0.5
+    //   },
+    //   "full_rep": {
+    //     "label": "Republican trifecta",
+    //     "position": 0.75
+    //   },
+    //   "NA": {
+    //     "label": "",
+    //     "position": 0.5
+    //   }
+    // };
+
+    var contCats = ['full_dem', 'split', 'full_rep', 'NA'];
+    var contText = ['Democrat trifecta', 'Split control', 'Republican trifecta', 'Other'];
+    var contPositions = [0.25, 0.5, 0.75, 0.5];
+
+    // object with control metadata to use for lookup
+    var contMeta = {};
+    contCats.forEach((key, i) => contMeta[key] = {"text": contText[i], "position": contPositions[i]});
+
+    // with categories for lean dem/rep
+    // var contCats = ['full_dem', 'lean_dem', 'lean_rep', 'full_rep', 'NA'];
+    // var contText = ['Dem. trifecta', '2D 1R', '1D 2R', 'Rep. trifecta', 'Split'];
+    // var contPositions = [0.25, 0.5, 0.5, 0.75, 0.5];
     // var contPositions = [0.15, 0.4, 0.6, 0.85, 0.5];
 
     // color scale for control categories
     var color = d3.scaleOrdinal()
       .domain(contCats)
-      .range(['#0078c2', '#a8a8a8', '#a8a8a8', '#d6422b', '#dddddd']);
+      .range(['#0078c2', '#a8a8a8', '#d6422b', '#dddddd']);
       // .range(['#0078c2', '#92c5de', '#f4a582', '#d6422b', '#dddddd']);
       //.range(['#4393c3', '#92c5de', '#f4a582', '#d6604d', '#dddddd']);
     // var colortest = d3.scaleOrdinal()
     //   .domain(contCats)
     //   .range(['#358463', '#795573', '#478149', '#435793', '#dddddd']);
 
-    // size scale
-    var pop_max = d3.max(data21, function(d) { return d.pop; });
-    var pop_min = d3.min(data21, function(d) { return d.pop; });
+    // data min and max
+    var pop_max = d3.max(data_all_2021, function(d) { return d.pop; });
+    var pop_min = d3.min(data_all_2021, function(d) { return d.pop; });
+    var marg_rep_max = d3.max(data_all_2021, function(d) { return d.pres_marg_rep; });
+    var marg_rep_min = d3.min(data_all_2021, function(d) { return d.pres_marg_rep; });
+    // determine max margin of victory for either Rs or Ds (check if marg_rep_max or marg_rep_max is farther from 0)
+    var max_marg = d3.max([marg_rep_max, Math.abs(marg_rep_min)]);
+
+    // size scales
     var size = d3.scaleSqrt()
       .domain([0, pop_max])
       .range([0, 30 * scalar]); // max radius
     var sizeText = d3.scaleLinear()
-      .domain([pop_min, pop_min*8])
-      .range([8, 10]) // min and max font size
-      .clamp(true); // specifies that values beyond max domain should not be larger than max range
+      .domain([pop_min, (pop_max - pop_min) / 2]) // max domain is pop midpoint
+      .range([8, 12]) // min and max font size
+      .clamp(true); // specifies that values beyond max domain (largest states) should not be larger than max font size in range
 
     // x scale for longitude
     var xLonScale = d3.scaleLinear()
@@ -93,8 +137,8 @@ d3.queue()
       .range(contPositions.map(function(x) { return x * width; })); // a new array multiplying each element of contPositions by width 
     // x scale for pres vote
     var xVoteScale = d3.scaleLinear()
-      .domain([0.2, 0.8])
-      .range([width * 0, width * 1]);
+      .domain([0 - max_marg, max_marg])
+      .range([width * 0.1, width * 0.9]);
     var yLegScale = d3.scaleLinear()
       .domain([0, 16])
       .range([height * .8, height * 0.2]);
@@ -179,7 +223,8 @@ d3.queue()
       .attr("width", width) // changed from "width" (to set based on height)
       .attr("x", 0) //margin.left)
       .attr("y", 0)
-      .style('display', 'none'); //margin.top);
+      .style('opacity', 0);
+      // .style('display', 'none'); //margin.top);
 
     // add g after basemap so it goes on top
     var g = svg.append('g');
@@ -339,22 +384,38 @@ d3.queue()
 
     // add control labels
     var contLabel = svg.append("g").selectAll('.headerLabel')
-      .data(contPositions.slice(0,4)).enter()
+      .data(contPositions.slice(0,3)).enter()
       .append('text')
       .text(function(d, i) {
-          return contText.slice(0,4)[i];
+          return contText.slice(0,3)[i];
       })
       .attr('class', 'headerLabel')
       .attr('x', d=> width * d)
       .attr('y', height * 0.12);
+
+    // add control numbers
+    var contNumber = svg.append("g").selectAll('.number')
+      .data(data_all_ag_2021).enter()
+      .append('text')
+      .text(d=> d3.format(".0%")(d.pop_pct) + " of the U.S. population")
+      .attr('class', 'number')
+      .attr('x', d=> width * contMeta[d.cont_text].position) // lookup corresponding position
+      .attr('y', height * 0.16);
+
+    //add axis
+    var presAxis = g.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height * 0.5 + ")")
+      .call(d3.axisBottom(xVoteScale).ticks(10, ".0%"))
+      .style('opacity', 0);
 
     // add year label
     var yearLabel = svg.append("g")
       .append('text')
       .text(2021)
       .attr('class', 'yearLabel')
-      .attr('x', 325)
-      .attr('y', height * 0.98);
+      .attr('x', width * 0.5)
+      .attr('y', height * 0.97);
 
 
     // GRAPH SCROLL WITH LISTENER
@@ -375,12 +436,12 @@ d3.queue()
           //i             0              1                  2             3             4             5             6             7             8
           //year
           var dataYear =  [2021,         2021,              2021,         1975,         1995,         2010,         2010,         2011,         2021];
-          //var dataTest =  [data21,         data21,              data21,         data75,         1995,         2010,         2010,         2011,         2021];
+          //var dataTest =  [data_all_2021,         data_all_2021,              data_all_2021,         data75,         1995,         2010,         2010,         2011,         2021];
           //map
           var map =       ['FALSE',      'FALSE',           'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE'];
           //x
           var xScales =   [xContScale,   xVoteScale,        xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale];
-          var xInputs =   ['cont_text',  'pres_vote_rep',   'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x'];
+          var xInputs =   ['cont_text',  'pres_marg_rep',   'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x'];
           //y
           var yScales =   [dummyScale,   dummyScale,        yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale];
           var yInputs =   ['state_y',    'state_y',         'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y'];
@@ -388,7 +449,7 @@ d3.queue()
           var cScales =   [color,        color,             color,        color,        color,        color,        color,        color,        color];
           var cInputs =   ['cont_text',  'cont_text',       'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text'];          
           //force strs (x, y, collision)
-          var xStrs =     [0.1,          0.8,                 0.1,          0.1,           0.1,         0.1,          0.1,          0.1,          0.1];
+          var xStrs =     [0.1,          0.8,               0.1,          0.1,           0.1,         0.1,          0.1,          0.1,          0.1];
           var yStrs =     [0.1,          0.1,               0.1,          0.1,           0.1,         0.1,          0.1,          0.1,          0.1];
           var collStrs =  [1,            1,                 0,            0,             0,           0,            0,            0,            0];
 
@@ -415,24 +476,26 @@ d3.queue()
           // show or hide header labels
           if (i === 0) {
             d3.selectAll('.headerLabel').style('opacity', 1);
+            d3.selectAll('.number').style('opacity', 1);
           } else {
-            d3.selectAll('.headerLabel').style('opacity', 0);
+            d3.selectAll('.headerLabel').transition().style('opacity', 0);
+            d3.selectAll('.number').transition().style('opacity', 0);
+          }
+
+          // show or hide pres vote axis
+          if (i === 1) {
+            presAxis.transition().duration(1000).style('opacity', 1);
+          } else {
+            presAxis.style('opacity', 0);
           }
 
           // show or hide basemap
-          if (map[i] === 'FALSE') {
-            basemap.transition().style('opacity', 0);
-            //d3.selectAll('.myCircle').style('display', 'none');
-            //node.style('opacity', 1);
-            //label.style('opacity', 1);
-            yearLabel.style('opacity', 0)
-          } else if (map[i] === 'TRUE') {
-            basemap.style('display', 'block')
-              .transition().style('opacity', 1);
-            //d3.selectAll('.myCircle').style('display', 'block');
-            //node.style('opacity', 0);
-            //label.style('opacity', 0);
-            yearLabel.style('opacity', 1)
+          if (i < 2) {
+            basemap.style('opacity', 0);
+            yearLabel.style('opacity', 0);
+          } else {
+            basemap.transition().duration(500).style('opacity', 1);
+            yearLabel.style('opacity', 1);
           };
 
           // update year label /// need to add interpolation transition effect

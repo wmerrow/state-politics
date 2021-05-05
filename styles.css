@@ -148,6 +148,13 @@ svg{
 
 .headerLabel{
   text-anchor: middle;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.number{
+  text-anchor: middle;
+  font-size: 14px;
 }
 
 .yearLabel{
