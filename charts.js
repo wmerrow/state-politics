@@ -39,6 +39,59 @@ d3.queue()
   var data_all_2021 = data_all.filter(({year}) => year === 2021);
   var data_all_ag_2021 = data_all_ag.filter(({year}) => year === 2021);
 
+      // function for stacking data (for pres bar chart)
+      // var myStack = function (dataToStack) {
+      //   var total = d3.sum(dataToStack, d => d.pop_pct);
+      //   let stackPosition = 0;
+      //   return dataToStack.sort((a,b)=>d3.ascending(+a.cont, +b.cont))
+      //     .map(d => ({
+      //       state: d.state,
+      //       rlean: d.rlean,
+      //       electors: +d.electors,
+      //       startPosition: stackPosition,
+      //       endPosition: (stackPosition += +d.electors)
+      //     }));
+      // };
+
+      // var data_nest = myStack(data_all_ag);
+    var mycontCats = ['full_dem', 'full_rep', 'split', 'NA'];
+    var contCats = ['full_dem', 'split', 'full_rep', 'NA'];
+
+    var data_nest = d3.nest()
+      .key(function(d) { return d.year; })
+      .key(function(d) { return d.cont_text; })
+      .rollup(function(v) { return d3.sum(v, function(d) { return d.pop_pct; }); })
+      .entries(data_all_ag);
+
+    console.log(data_nest);
+    
+    var years = data_nest.map(function(d) { return d.key; })
+    console.log(years);
+
+    var data_stack = [];
+    
+    data_nest.forEach(function(d, i) {
+      d.values = d.values.map(function(e) { return e.value; })
+      var t ={}
+      mycontCats.forEach(function(e, i) {
+        t[e] = d.values[i]
+      })
+      t.year = d.key;
+      data_stack.push(t)
+    });
+    
+    console.log(data_stack);
+
+    var layers = d3.stack().keys(mycontCats)(data_stack);
+
+    console.log(layers);
+
+
+
+
+
+
+
   var oldWidth = 0;
 
   function render(){
@@ -92,7 +145,6 @@ d3.queue()
     //   }
     // };
 
-    var contCats = ['full_dem', 'split', 'full_rep', 'NA'];
     var contText = ['Democrat trifecta', 'Split control', 'Republican trifecta', 'Other'];
     var contPositions = [0.25, 0.5, 0.75, 0.5];
 
@@ -242,6 +294,51 @@ d3.queue()
 
     // add g after basemap so it goes on top
     var g = svg.append('g');
+
+
+
+
+
+var y = d3.scaleLinear()
+    .rangeRound([height, height * 0.75])
+    .nice();
+
+var x = d3.scaleBand()
+    .rangeRound([width * 0.2, width * 0.8])
+    .paddingInner(0.05)
+    .align(0.1)
+    
+var z = d3.scaleOrdinal(['#0078c2', '#a8a8a8', '#d6422b', '#dddddd'])
+
+y.domain([0, 1]);
+x.domain(years);
+
+g.selectAll("g")
+          .data(layers)
+      .enter().append("g")
+        .style("fill", function(d) { return z(d.key); })  
+        .selectAll("rect")
+      .data(function(d) {  return d; })
+        .enter().append("rect")
+          .attr("x", function(d, i) { return x(d.data.year); })
+          .attr("y", function(d) { return y(d[1]); })
+          .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+          .attr("width", x.bandwidth());
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     //add axis
     var axisHeight = yDefault + 25;
