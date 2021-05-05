@@ -296,7 +296,7 @@ d3.queue()
     var g = svg.append('g');
 
 
-    // AREA CHART
+    // BAR CHART
 
     var xYearScale = d3.scaleBand()
         .domain(years)
@@ -309,10 +309,17 @@ d3.queue()
         .rangeRound([height * 0.82, height * 0.65])
         .nice();
 
-    var areaChart = g.selectAll("g")
+    var barChart = g.append('g').selectAll("g")
       .data(layers)
       .enter().append("g")
-        .style("fill", function(d) { return color(d.key); })  
+        .style("fill", function(d) { 
+          if (d.year === '2000') {
+            return 'green';
+          } else {
+            return color(d.key);  
+          }
+        })
+//        .style("fill", function(d) { return color(d.key); })  
         .selectAll("rect")
       .data(function(d) {  return d; })
         .enter().append("rect")
@@ -660,15 +667,17 @@ d3.queue()
           if (i < 2) {
             basemap.style('opacity', 0);
             yearLabel.style('opacity', 0);
-            areaChart.style('opacity', 0);
+            barChart.style('opacity', 0);
           } else {
             basemap.transition().duration(500).style('opacity', 1);
             yearLabel.style('opacity', 1);
-            areaChart.style('opacity', 1);
+            barChart.style('opacity', 1);
           };
 
           // update year label /// need to add interpolation transition effect
           yearLabel.transition().text(dataYear[i]);
+
+
 
         }); // end 'active' listener
 
