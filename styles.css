@@ -131,8 +131,11 @@ circle{
   font-family: monospace;
 }
 
-svg{
+#mySvg{
   background-color: #ffffff;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .label{

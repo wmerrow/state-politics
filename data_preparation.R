@@ -33,7 +33,7 @@ pc1 <- pc1 %>% select(year,
 str(pc1)
 
 # filter to desired years
-pc1 <- pc1 %>% filter(year >= 1969)
+pc1 <- pc1 %>% filter(year >= 1975)
 pc1 <- pc1 %>% filter(year <= 2011)
 
 
@@ -298,19 +298,18 @@ str(sp)
 all <- left_join(all, sp, by = "state")
 str(all)
 
+# dataframe of all combinations of control and year
+comb <- expand.grid(year = unique(all$year), cont_text = unique(all$cont_text))
+comb$cont_text <- as.character(comb$cont_text)
 # aggregate by control-year and calculate sum for each control-year
 ag <- all
-ag$cont_text_year <- paste0(ag$cont_text, ag$year)
 ag <- ag %>%
-  group_by(cont_text_year) %>%
+  group_by(year, cont_text) %>%
   summarise(pop = sum(pop))
-ag$year <- as.integer(str_sub(ag$cont_text_year, -4, -1))
-ag$cont_text <- str_sub(ag$cont_text_year, 1, -5)
-# select desired columns
-ag <- ag %>% select(year,
-                    cont_text,
-                    pop
-)
+# combinations that don't exist (full_rep in 1977 and 1978) don't have rows, so need to join with control-year combinations
+ag <- left_join(comb, ag)
+# change pop NAs (combinations that didn't exist) to zero
+ag$pop[is.na(ag$pop)] <- 0
 # aggregate by year and calculate sum for each year
 ag_yr <- ag %>%
   group_by(year) %>%
