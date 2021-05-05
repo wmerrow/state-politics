@@ -38,8 +38,8 @@ d3.queue()
   // filter to 2021
   var data_all_2021 = data_all.filter(({year}) => year === 2021);
   var data_all_ag_2021 = data_all_ag.filter(({year}) => year === 2021);
-console.log(data_all_ag_2021);
-  var oldWidth = 0
+
+  var oldWidth = 0;
 
   function render(){
     // if (oldWidth == innerWidth) return
@@ -57,7 +57,17 @@ console.log(data_all_ag_2021);
     // 700 x 440 is roughly the map aspect ratio so bubbles end up centered in states
     var scalar = 1.37;
     var width = 700 * scalar;
-    var height = 450 * scalar;
+    var mapAspect = 582.5 / 918.4; // map aspect ratio
+    var height = width * mapAspect;
+    var mapWidth = width * 0.6;
+    var mapHeight = mapWidth * mapAspect;
+
+    var mapMargin = {
+      top: 30,
+      right: (width - mapWidth) * 0.5,
+      bottom: 30,
+      left: (width - mapWidth) * 0.5
+    }
 
     var r = 40;
     var textSize = 11;
@@ -86,7 +96,7 @@ console.log(data_all_ag_2021);
     var contText = ['Democrat trifecta', 'Split control', 'Republican trifecta', 'Other'];
     var contPositions = [0.25, 0.5, 0.75, 0.5];
 
-    // object with control metadata to use for lookup
+    // create object with control metadata to use for lookup
     var contMeta = {};
     contCats.forEach((key, i) => contMeta[key] = {"text": contText[i], "position": contPositions[i]});
 
@@ -115,9 +125,12 @@ console.log(data_all_ag_2021);
     var max_marg = d3.max([marg_rep_max, Math.abs(marg_rep_min)]);
 
     // size scales
-    var size = d3.scaleSqrt()
+    var sizeChart = d3.scaleSqrt()
       .domain([0, pop_max])
-      .range([0, 30 * scalar]); // max radius
+      .range([0, 30 * scalar]); // max radius for charts
+    var sizeMap = d3.scaleSqrt()
+      .domain([0, pop_max])
+      .range([0, 20 * scalar]); // max radius for map
     var sizeText = d3.scaleLinear()
       .domain([pop_min, (pop_max - pop_min) / 2]) // max domain is pop midpoint
       .range([8, 12]) // min and max font size
@@ -126,11 +139,11 @@ console.log(data_all_ag_2021);
     // x scale for longitude
     var xLonScale = d3.scaleLinear()
       .domain([0, 1])
-      .range([0, width]);
+      .range([mapMargin.left, width - mapMargin.right]);
     // y scale for latitude
     var yLatScale = d3.scaleLinear()
       .domain([0, 1])
-      .range([height * 0, height * 1]);
+      .range([mapMargin.top, mapHeight + mapMargin.top]);
     // x scale for control
     var xContScale = d3.scaleOrdinal()
       .domain(contCats)
@@ -143,9 +156,10 @@ console.log(data_all_ag_2021);
       .domain([0, 16])
       .range([height * .8, height * 0.2]);
     // dummy scale
+    var yDefault = 200;
     var dummyScale = d3.scaleLinear()
       .domain([-1000, 1000])
-      .range([200, 200]);
+      .range([yDefault, yDefault]);
 
     // SECTION 1
 
@@ -220,20 +234,79 @@ console.log(data_all_ag_2021);
     // set up basemap
     var basemap = d3.select('#mySvg').append("svg:image")
       .attr("xlink:href", "img/us_map.svg")
-      .attr("width", width) // changed from "width" (to set based on height)
-      .attr("x", 0) //margin.left)
-      .attr("y", 0)
+      .attr("width", mapWidth)
+      .attr("x", mapMargin.left)
+      .attr("y", mapMargin.top)
       .style('opacity', 0);
       // .style('display', 'none'); //margin.top);
 
     // add g after basemap so it goes on top
     var g = svg.append('g');
 
+    //add axis
+    var axisHeight = yDefault + 25;
+    var presAxis = g.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(0," + (yDefault + (axisHeight / 2)) + ")")
+      .call(d3.axisTop(xVoteScale)
+              .ticks(10)
+              .tickSize(axisHeight)
+              //.tickPadding(-3)
+              // remove minus signs and append +D or +R, or change to Even
+              .tickFormat((function (v) {
+                  if (v == 0) {
+                    return 'Even';
+                  } else if (v < 0) {
+                    return 'D +' + d3.format("0")(Math.abs(v*100)); 
+                  } else if (v > 0) {
+                    return 'R +' + d3.format("0")(Math.abs(v*100)); 
+                  };
+              }))
+            )
+      .call(g => g.select(".domain").remove())
+      .style('opacity', 0);
+
+    // style axis lines (different style for zero line)
+    d3.selectAll("g.axis g.tick line")
+        .style("stroke", function(d){
+           if (d === 0) {
+            return 'black';
+           } else {
+            return '#cccccc';
+           }
+        })
+        .style("stroke-width", function(d){
+           if (d === 0) {
+            return 1.5;
+           } else {
+            return 1;
+           }
+        })
+        .attr("y1", 0 - axisHeight)
+        .attr("y2", function(d){
+           if (d === 0) {
+            return 0;
+           } else {
+            return 8 - axisHeight;
+           }
+        });
+
+    // style and position axis text (different style for zero text)
+    d3.selectAll("g.axis g.tick text")
+        .style("fill", function(d){
+           if (d === 0) {
+            return 'black';
+           } else {
+            return '#aaaaaa';
+           }
+        })
+        .attr("dy", -3);
+
     // BUBBLES
 
     var node = g.append("g")
       .attr("stroke", "#fff")
-      .attr("stroke-width", 1)
+      .attr("stroke-width", 0.75)
       .selectAll(".node");
 
     var label = g.append("g")
@@ -249,6 +322,7 @@ console.log(data_all_ag_2021);
                     yInput,
                     cScale,
                     cInput,
+                    sScale,
                     xStr,
                     yStr,
                     collStr,
@@ -266,11 +340,11 @@ console.log(data_all_ag_2021);
       node
         .transition(t)
         .style("fill", d=> cScale(d[cInput]))
-        .attr("r", d=> size(d.pop));
+        .attr("r", d=> sScale(d.pop));
 
       node = node.enter().append("circle")
         .style("fill", d=> cScale(d[cInput]))
-        .attr("r", d=> size(d.pop))
+        .attr("r", d=> sScale(d.pop))
         .merge(node);
 
       // Apply the general update pattern to the labels
@@ -300,13 +374,14 @@ console.log(data_all_ag_2021);
         .force("x", d3.forceX().strength(xStr).x(d=> xScale(d[xInput])))
         .force("y", d3.forceY().strength(yStr).y(d=> yScale(d[yInput])))
         // avoid collision - change strength and number of iterations to adjust
-        .force("collide", d3.forceCollide().strength(collStr).radius(d=> size(d.pop) + nodePadding).iterations(10))
+        .force("collide", d3.forceCollide().strength(collStr).radius(d=> sScale(d.pop) + nodePadding).iterations(10))
         .on('tick', function(){
           node
-            //.transition().duration(50) /// transition on each tick to slow down bubbles, but this messes with bubble steps for some reason
+            // .transition().duration(100) /// transition on each tick to slow down bubbles, but this messes with bubble steps for some reason
             .attr("cx", d=> d.x)
             .attr("cy", d=> d.y);
           label
+            // .transition().duration(100) /// transition on each tick to slow down bubbles, but this messes with bubble steps for some reason
             .attr("x", d=> d.x)
             .attr("y", d=> d.y + textSize / 2 - 2); // adds half of text size to vertically center in bubbles
         });
@@ -402,12 +477,13 @@ console.log(data_all_ag_2021);
       .attr('x', d=> width * contMeta[d.cont_text].position) // lookup corresponding position
       .attr('y', height * 0.16);
 
-    //add axis
-    var presAxis = g.append("g")
-      .attr("class", "axis axis--x")
-      .attr("transform", "translate(0," + height * 0.5 + ")")
-      .call(d3.axisBottom(xVoteScale).ticks(10, ".0%"))
-      .style('opacity', 0);
+    // add pres vote label
+    var presLabel = svg.append("g")
+      .append('text')
+      .text('Presidential vote')
+      .attr('class', 'presLabel')
+      .attr('x', width * 0.5)
+      .attr('y', height * 0.09);
 
     // add year label
     var yearLabel = svg.append("g")
@@ -448,6 +524,9 @@ console.log(data_all_ag_2021);
           //color
           var cScales =   [color,        color,             color,        color,        color,        color,        color,        color,        color];
           var cInputs =   ['cont_text',  'cont_text',       'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text'];          
+          //size
+          var sScales =   [sizeChart,    sizeChart,         sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap];
+          //var sInputs =   ['pop',        'pop',             'pop',        'pop',        'pop',        'pop',        'pop',        'pop',        'pop'];          
           //force strs (x, y, collision)
           var xStrs =     [0.1,          0.8,               0.1,          0.1,           0.1,         0.1,          0.1,          0.1,          0.1];
           var yStrs =     [0.1,          0.1,               0.1,          0.1,           0.1,         0.1,          0.1,          0.1,          0.1];
@@ -468,6 +547,7 @@ console.log(data_all_ag_2021);
                  yInputs[i],
                  cScales[i],
                  cInputs[i],
+                 sScales[i],
                  xStrs[i],
                  yStrs[i],
                  collStrs[i],
@@ -482,11 +562,13 @@ console.log(data_all_ag_2021);
             d3.selectAll('.number').transition().style('opacity', 0);
           }
 
-          // show or hide pres vote axis
+          // show or hide pres vote axis and pres vote label
           if (i === 1) {
             presAxis.transition().duration(1000).style('opacity', 1);
+            presLabel.transition().duration(1000).style('opacity', 1);
           } else {
             presAxis.style('opacity', 0);
+            presLabel.style('opacity', 0);
           }
 
           // show or hide basemap
