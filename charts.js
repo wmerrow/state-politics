@@ -1,95 +1,82 @@
+function log(something) {
+  console.log(something);
+};
+
 d3.queue()
 .defer(d3.csv, "data/output/party_control.csv")
 .defer(d3.csv, "data/output/party_control_aggregated.csv")
 .await(function(error, data_all, data_all_ag) {
   if (error) throw error;
 
-  /// remove nebraska for now
+  // metadata for party control
+  var contCats = ['full_dem', 'split', 'full_rep', 'NA'];
+  var contText = ['Democrat trifecta', 'Split control', 'Republican trifecta', 'Other'];
+  var contPositions = [0.25, 0.5, 0.75, 0.5];
+  var contOrder = [3, 2, 1, 4]; // custom order to use in sorting for stacked bar chart
+  // object with control metadata to use for lookup
+  var contMeta = {};
+  contCats.forEach((key, i) => contMeta[key] = {"text": contText[i], "position": contPositions[i], "order": contOrder[i]});
+
+  /// remove nebraska for now - Need to confirm Nebraska control to remove these two lines
   var data_all = data_all.filter(({state}) => state !== "Nebraska");
   var data_all_ag = data_all_ag.filter(({cont_text}) => cont_text !== "NA");
 
   // convert columns to numeric
   data_all.forEach(function(data){
-      data.year = +data.year;
-      data.fips = +data.fips;
-      data.pop = +data.pop;
-      data.government_cont = +data.government_cont;
-      data.cont_text = data.cont_text;
-      data.govparty_c = +data.govparty_c;
-      data.hs_cont_alt = +data.hs_cont_alt;
-      data.sen_cont_alt = +data.sen_cont_alt;
-      data.hs_dem_prop_all = +data.hs_dem_prop_all;
-      data.hs_rep_prop_all = +data.hs_rep_prop_all;
-      data.sen_dem_prop_all = +data.sen_dem_prop_all;
-      data.sen_rep_prop_all = +data.sen_rep_prop_all;
-      data.pres_share_dem = +data.pres_share_dem;
-      data.pres_share_rep = +data.pres_share_rep;
-      data.pres_marg_rep = +data.pres_marg_rep;
-    })
+    data.year = +data.year;
+    data.fips = +data.fips;
+    data.pop = +data.pop;
+    data.government_cont = +data.government_cont;
+    data.cont_text = data.cont_text;
+    data.govparty_c = +data.govparty_c;
+    data.hs_cont_alt = +data.hs_cont_alt;
+    data.sen_cont_alt = +data.sen_cont_alt;
+    data.hs_dem_prop_all = +data.hs_dem_prop_all;
+    data.hs_rep_prop_all = +data.hs_rep_prop_all;
+    data.sen_dem_prop_all = +data.sen_dem_prop_all;
+    data.sen_rep_prop_all = +data.sen_rep_prop_all;
+    data.pres_share_dem = +data.pres_share_dem;
+    data.pres_share_rep = +data.pres_share_rep;
+    data.pres_marg_rep = +data.pres_marg_rep;
+  })
 
-    data_all_ag.forEach(function(data){
-      data.year = +data.year;
-      data.pop = +data.pop;
-      data.pop_pct = +data.pop_pct;
-      data.pop_yr = +data.pop_yr;
-      data.cont_text = data.cont_text;
-    })
+  data_all_ag.forEach(function(data){
+    data.year = +data.year;
+    data.pop = +data.pop;
+    data.pop_pct = +data.pop_pct;
+    data.pop_yr = +data.pop_yr;
+    data.cont_text = data.cont_text;
+    // add column for order using control metadata lookup
+    data.order = contMeta[data.cont_text].order;
+  })
+  // sort aggregated data by custom order
+  data_all_ag.sort((a,b)=>d3.ascending(a.order, b.order));
 
   // filter to 2021
   var data_all_2021 = data_all.filter(({year}) => year === 2021);
   var data_all_ag_2021 = data_all_ag.filter(({year}) => year === 2021);
 
-      // function for stacking data (for pres bar chart)
-      // var myStack = function (dataToStack) {
-      //   var total = d3.sum(dataToStack, d => d.pop_pct);
-      //   let stackPosition = 0;
-      //   return dataToStack.sort((a,b)=>d3.ascending(+a.cont, +b.cont))
-      //     .map(d => ({
-      //       state: d.state,
-      //       rlean: d.rlean,
-      //       electors: +d.electors,
-      //       startPosition: stackPosition,
-      //       endPosition: (stackPosition += +d.electors)
-      //     }));
-      // };
-
-      // var data_nest = myStack(data_all_ag);
-    var contCats = ['full_dem', 'split', 'full_rep', 'NA'];
-
-    var data_nest = d3.nest()
-      .key(function(d) { return d.year; })
-      .key(function(d) { return d.cont_text; })
-      .rollup(function(v) { return d3.sum(v, function(d) { return d.pop_pct; }); })
-      .entries(data_all_ag);
-
-    console.log(data_nest);
-    
-    var years = data_nest.map(function(d) { return d.key; })
-    console.log(years);
-
-    var data_stack = [];
-    
-    data_nest.forEach(function(d, i) {
-      d.values = d.values.map(function(e) { return e.value; })
-      var t ={}
-      contCats.forEach(function(e, i) {
-        t[e] = d.values[i]
-      })
-      t.year = d.key;
-      data_stack.push(t)
-    });
-    
-    console.log(data_stack);
-
-    var layers = d3.stack().keys(contCats)(data_stack);
-
-    console.log(layers);
-
-
-
-
-
-
+  // nested data for bar chart
+  var data_nest = d3.nest()
+    .key(function(d) { return d.year; })
+    .key(function(d) { return d.cont_text; })
+    .rollup(function(v) { return d3.sum(v, function(d) { return d.pop_pct; }); })
+    .entries(data_all_ag);
+  
+  var years = data_nest.map(function(d) { return d.key; })
+  var data_stack = [];
+  
+  data_nest.forEach(function(d, i) {
+    d.values = d.values.map(function(e) { return e.value; })
+    var t ={}
+    contCats.forEach(function(e, i) {
+      t[e] = d.values[i]
+    })
+    t.year = d.key;
+    data_stack.push(t)
+  });
+  
+  var bar_data = d3.stack().keys(contCats)(data_stack);
 
   var oldWidth = 0;
 
@@ -111,46 +98,29 @@ d3.queue()
     var width = 700 * scalar;
     var mapAspect = 582.5 / 918.4; // map aspect ratio
     var height = width * mapAspect;
-    var mapWidth = width * 0.6;
+    var mapWidth = width * 0.5;
     var mapHeight = mapWidth * mapAspect;
+    var barChartWidth = width * 0.6;
+    var barChartHeight = height * 0.2;
 
     var mapMargin = {
-      top: 30,
+      top: height * 0.45,
       right: (width - mapWidth) * 0.5,
       bottom: 30,
       left: (width - mapWidth) * 0.5
     }
 
+    var barChartMargin = {
+      top: height * 0.2,
+      right: (width - barChartWidth) * 0.5,
+      bottom: 30,
+      left: (width - barChartWidth) * 0.5
+    }
+
     var r = 40;
     var textSize = 11;
     var nodePadding = 1;
-
-    // var contMeta = {
-    //   "full_dem": {
-    //     "label": "Democrat trifecta",
-    //     "position": 0.25
-    //   },
-    //   "split": {
-    //     "label": "Split control",
-    //     "position": 0.5
-    //   },
-    //   "full_rep": {
-    //     "label": "Republican trifecta",
-    //     "position": 0.75
-    //   },
-    //   "NA": {
-    //     "label": "",
-    //     "position": 0.5
-    //   }
-    // };
-
-    var contText = ['Democrat trifecta', 'Split control', 'Republican trifecta', 'Other'];
-    var contPositions = [0.25, 0.5, 0.75, 0.5];
-
-    // create object with control metadata to use for lookup
-    var contMeta = {};
-    contCats.forEach((key, i) => contMeta[key] = {"text": contText[i], "position": contPositions[i]});
-
+    
     // with categories for lean dem/rep
     // var contCats = ['full_dem', 'lean_dem', 'lean_rep', 'full_rep', 'NA'];
     // var contText = ['Dem. trifecta', '2D 1R', '1D 2R', 'Rep. trifecta', 'Split'];
@@ -161,11 +131,12 @@ d3.queue()
     var color = d3.scaleOrdinal()
       .domain(contCats)
       .range(['#0078c2', '#a8a8a8', '#d6422b', '#dddddd']);
+    /// bar chart colors need to be reversed for some reason, also split control uses lighter gray on bar chart
+    var barColor = d3.scaleOrdinal()
+      .domain(contCats)
+      .range(['#d6422b', '#cccccc', '#0078c2', '#dddddd']);
       // .range(['#0078c2', '#92c5de', '#f4a582', '#d6422b', '#dddddd']);
       //.range(['#4393c3', '#92c5de', '#f4a582', '#d6604d', '#dddddd']);
-    // var colortest = d3.scaleOrdinal()
-    //   .domain(contCats)
-    //   .range(['#358463', '#795573', '#478149', '#435793', '#dddddd']);
 
     // data min and max
     var pop_max = d3.max(data_all_2021, function(d) { return d.pop; });
@@ -300,29 +271,28 @@ d3.queue()
 
     var xYearScale = d3.scaleBand()
         .domain(years)
-        .rangeRound([width * 0.1, width * 0.9])
+        .range([barChartMargin.left, barChartWidth + barChartMargin.right])
         .paddingInner(0.05)
         .align(0.1);
 
     var yPopScale = d3.scaleLinear()
         .domain([0, 1])
-        .rangeRound([height * 0.82, height * 0.65])
-        .nice();
+        .range([barChartHeight + barChartMargin.top, barChartMargin.top]);
 
     var barChart = g.append('g').selectAll("g")
-      .data(layers)
+      .data(bar_data)
       .enter().append("g")
-      .style("fill", function(d) { return color(d.key); })  
+      .style("fill", function(d) { return barColor(d.key); })  
     .selectAll("rect")
       .data(function(d) { return d; })
       .enter().append("rect")
-      .attr("x", function(d, i) { return xYearScale(d.data.year); })
+      .attr('class', 'rect')
+      .attr("x", function(d) { return xYearScale(d.data.year); })
       .attr("y", function(d) { return yPopScale(d[1]); })
       .attr("height", function(d) { return yPopScale(d[0]) - yPopScale(d[1]); })
       .attr("width", xYearScale.bandwidth())
       .style('opacity', 0);
-
-
+    
     // PRES AXIS
 
     //add axis
@@ -410,11 +380,10 @@ d3.queue()
                     sScale,
                     xStr,
                     yStr,
-                    collStr,
-                    i) { 
+                    collStr) { 
 
       // transition /// keep this line within update, not sure why
-      var t = d3.transition().duration(750);
+      var t = d3.transition().duration(1000);
 
       // Apply the general update pattern to the nodes
 
@@ -443,14 +412,12 @@ d3.queue()
         .text(d=> d.state_abbrev)
         .style("text-anchor", "middle")
         .style("font-size", d=> sizeText(d.pop))
-        // .style("font-size", textSize)
         .style("stroke", d=> cScale(d[cInput]));
 
       label = label.enter().append("text")
         .attr("class", "label")
         .text(d=> d.state_abbrev)
         .style("font-size", d=> sizeText(d.pop))
-        // .style("font-size", textSize)
         .style("stroke", d=> cScale(d[cInput]))
         .merge(label);
 
@@ -575,9 +542,27 @@ d3.queue()
       .append('text')
       .text(2021)
       .attr('class', 'yearLabel')
-      .attr('x', width * 0.5)
-      .attr('y', height * 0.07);
+      .attr('x', d=> xYearScale('2021') + xYearScale.bandwidth()/2)
+      .attr('y', barChartMargin.top - 10);
 
+    // add year highlight rectangle
+    var strokeWidth = 3;
+    var yearRect = svg.append("g")
+      .append('rect')
+      .attr('class', 'yearRect')
+      // offset by half of stroke width so stroke doesn't overlap bars (since stroke is centered on rect edges)
+      .attr('x', d=> xYearScale('2021') - strokeWidth/2)
+      .attr('y', barChartMargin.top - strokeWidth/2 + 1)
+      .attr('width', xYearScale.bandwidth() + strokeWidth)
+      .attr('height', yPopScale(0) - yPopScale(1) + strokeWidth - 1)
+      .style('stroke-width', strokeWidth);
+
+    // add year triangle
+    // var yearTri = svg.append("g")
+    //   .append('path')
+    //   .attr('class', 'yearTri')
+    //   .attr('x', d=> xYearScale('2021') + xYearScale.bandwidth()/2)
+    //   .attr('y', height * 0.645);
 
     // GRAPH SCROLL WITH LISTENER
 
@@ -589,14 +574,11 @@ d3.queue()
         // .offset(innerWidth < 900 ? innerHeight - 30 : 200)
         .on('active', function(i){
           
-          // /// testing
-          // var data75 = data_all
-          //   .filter(({year}) => year === 1975);
           // STEPS (TURN WORD WRAP OFF FOR EASIER VIEW)
 
           //i             0              1                  2             3             4             5             6             7             8
           //year
-          var dataYear =  [2021,         2021,              2021,         1975,         1995,         2010,         2010,         2011,         2021];
+          var dataYear =  [2021,         2021,              2021,         1977,         1995,         2010,         2010,         2011,         2021];
           //var dataTest =  [data_all_2021,         data_all_2021,              data_all_2021,         data75,         1995,         2010,         2010,         2011,         2021];
           //map
           var map =       ['FALSE',      'FALSE',           'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE'];
@@ -617,10 +599,7 @@ d3.queue()
           var yStrs =     [0.1,          0.1,               0.1,          0.1,           0.1,         0.1,          0.1,          0.1,          0.1];
           var collStrs =  [1,            1,                 0,            0,             0,           0,            0,            0,            0];
 
-          /// for some reason there are residual strengths left over from previous view which cause views to appear different depending on strengths of view you were on before
-          
-
-          // filter data to desired year
+          // filter data to new year
           var newData = data_all
             .filter(({year}) => year === dataYear[i]);
 
@@ -635,8 +614,7 @@ d3.queue()
                  sScales[i],
                  xStrs[i],
                  yStrs[i],
-                 collStrs[i],
-                 i);
+                 collStrs[i]);
 
           // show and hide elements as needed
           // for some reason selecting using variables results in elements not fading out if you scroll too fast, but d3.selectAll doesn't have this issue
@@ -671,9 +649,24 @@ d3.queue()
           };
 
           // update year label /// need to add interpolation transition effect
-          yearLabel.text(dataYear[i]);
+          yearLabel
+            .text(dataYear[i])
+            .transition().duration(1000)
+            .attr('x', d=> xYearScale(dataYear[i]) + xYearScale.bandwidth()/2);
 
+          // update year highlight rect
+          yearRect
+            .transition().duration(1000)
+            .attr('x', d=> xYearScale(dataYear[i]) - strokeWidth/2);
 
+          // // change bar opacity depending on year
+          // barChart.style('opacity', function(d) {
+          //   if (+d.data.year === dataYear[i]) {
+          //     return 1;
+          //   } else { 
+          //     return 0.6;
+          //   }
+          // });
 
         }); // end 'active' listener
 
