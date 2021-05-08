@@ -33,7 +33,7 @@ pc1 <- pc1 %>% select(year,
 str(pc1)
 
 # filter to desired years
-pc1 <- pc1 %>% filter(year >= 1975)
+pc1 <- pc1 %>% filter(year >= 1977)
 pc1 <- pc1 %>% filter(year <= 2011)
 
 
@@ -155,6 +155,20 @@ pc$cont_text[pc$government_cont < 0.99 & pc$government_cont > 0.01] <- "split"
 #pc$cont_text[pc$government_cont > 0.2 & pc$government_cont < 0.5] <- "lean_rep"
 ### could fix above to handle edge cases resulting from tie in legislature (.83, .16, .5)
 
+# sort by year and state
+pc <- arrange(pc, state, year)
+
+# add col for control in previous year
+pc <- pc %>%
+  group_by(state) %>%
+  mutate(cont_text_prev_yr = lag(cont_text, order_by = state)) # apparently need to sort first or include order_by or this will not give correct results
+str(pc)
+
+# add col for whether control flipped
+pc$cont_flip[pc$cont_text == pc$cont_text_prev_yr] <- FALSE
+pc$cont_flip[pc$cont_text != pc$cont_text_prev_yr] <- TRUE
+
+
 # POPULATION (1969-2010)
 
 pop1 <- read.csv(file = "data/source/pop/popest-annual-historical_WM_formatted.csv", header = TRUE, stringsAsFactors = FALSE)
@@ -271,9 +285,6 @@ str(all)
 all <- left_join(all, pv, by = c("fips", "year"))
 str(all)
 
-# sort by year and state
-all <- arrange(all, state, year)
-
 # state abbreviations
 sa <- read.csv(file = "data/source/abbreviations/state_abbreviations.csv", header = TRUE, stringsAsFactors = FALSE)
 str(sa)
@@ -297,6 +308,9 @@ str(sp)
 # join with state x y positions
 all <- left_join(all, sp, by = "state")
 str(all)
+
+
+# aggregate to year level
 
 # dataframe of all combinations of control and year
 comb <- expand.grid(year = unique(all$year), cont_text = unique(all$cont_text))

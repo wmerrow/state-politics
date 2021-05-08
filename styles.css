@@ -122,15 +122,6 @@ h1{
 
 }
 
-
-circle{
-  fill: steelblue;
-}
-
-.mono{
-  font-family: monospace;
-}
-
 #mySvg{
   background-color: #ffffff;
   display: block;
@@ -138,7 +129,15 @@ circle{
   margin-right: auto;
 }
 
-.label{
+.nodeForce{
+  paint-order: stroke;
+}
+
+.nodeNonForce{
+  paint-order: stroke;
+}
+
+.nodeLabel{
   text-anchor: middle;
   font-weight: 400;
   fill: white;
@@ -162,7 +161,7 @@ circle{
 
 .yearLabel{
   text-anchor: middle;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: bold;
 }
 
@@ -175,5 +174,34 @@ circle{
 .presLabel{
   text-anchor: middle;
   font-size: 14px;
+  font-weight: bold;
+}
+
+.presLine{
+  stroke: #cccccc;
+  stroke-width: 1px;
+}
+
+.presName{
+  font-size: 12px;
+  fill: #aaaaaa;
+}
+
+.barYear{
+  text-anchor: middle;
+  font-size: 13px;
+/*  font-weight: bold;
+*/}
+
+.barTitle{
+  font-size: 15px;
+  /*font-weight: bold;*/
+}
+
+.barTitleSpanNormal{
+  font-weight: normal;
+}
+
+.barTitleSpan{
   font-weight: bold;
 }
