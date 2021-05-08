@@ -132,6 +132,7 @@ d3.queue()
     var r = 40;
     var textSize = 11;
     var nodePadding = 1;
+    var strokeWidth = 3; // stroke for highlight rect and lines
 
     // color scale for control categories
     var color = d3.scaleOrdinal()
@@ -366,6 +367,32 @@ d3.queue()
     //   .attr("y", (d,i)=> i * 17 + barChartMargin.top - 17)
     //   .style('opacity', 1);
 
+    // APPORTIONMENT LINES
+
+    var appoYears = [1980, 1990, 2000, 2010, 2020];
+
+    var appoLines = g.append('g')
+      .selectAll(".appoLine")
+      .data(appoYears)
+      .enter().append("line")
+      .attr('class', 'appoLine')
+      .attr("x1", d=> xYearScale(d) + xYearScale.bandwidth())//*0.87)
+      .attr("x2", d=> xYearScale(d) + xYearScale.bandwidth())//*0.87)
+      .attr("y1", barChartMargin.top + barChartHeight)
+      .attr("y2", barChartMargin.top + 1)
+      .style('stroke-width', strokeWidth)
+      .style('opacity', 0);
+
+    // var appoLabels = g.append('g')
+    //   .selectAll(".appoLabel")
+    //   .data(appoYears)
+    //   .enter().append("text")
+    //   .attr('class', 'appoLabel')
+    //   .text(d=> d)
+    //   .attr("x", d=> xYearScale(d) + xYearScale.bandwidth())
+    //   .attr("y", barChartMargin.top - 5)
+    //   .style('opacity', 0);
+
     // PRES VOTE AXIS
 
     //add axis
@@ -376,7 +403,6 @@ d3.queue()
       .call(d3.axisTop(xVoteScale)
               .ticks(10)
               .tickSize(axisHeight)
-              //.tickPadding(-3)
               // remove minus signs and append +D or +R, or change to Even
               .tickFormat((function (v) {
                   if (v == 0) {
@@ -560,7 +586,7 @@ d3.queue()
           })
           // need to change stroke-width before transition for some reason
           .transition(t)
-          .style('opacity', 1)
+          //.style('opacity', 1)
           .style("fill", d=> cScale(d[cInput]))
           .attr("r", d=> sScale(d.pop))
           .attr("cx", d=> xScale(d[xInput]) + xYearScale(newYear) + xYearScale.bandwidth()/2 - width/2)
@@ -583,7 +609,7 @@ d3.queue()
               return 1.5;
             }
           })
-          .style('opacity', 1)
+          //.style('opacity', 1)
           .style("fill", d=> cScale(d[cInput]))
           .attr("r", d=> sScale(d.pop))
           .attr("cx", d=> xScale(d[xInput]) + xYearScale(newYear) + xYearScale.bandwidth()/2 - width/2)
@@ -641,11 +667,10 @@ d3.queue()
       .text(2021)
       .attr('class', 'yearLabel')
       .attr('x', d=> xYearScale('2021') + xYearScale.bandwidth()/2)
-      .attr('y', barChartMargin.top + barChartHeight + 26)
+      .attr('y', barChartMargin.top + barChartHeight + 22)
       .style('opacity', 0);
 
     // add year highlight rectangle
-    var strokeWidth = 3;
     var yearRect = svg.append("g")
       .append('rect')
       .attr('class', 'yearRect')
@@ -668,30 +693,40 @@ d3.queue()
         // .offset(innerWidth < 900 ? innerHeight - 30 : 200)
         .on('active', function(i){
           
-          // STEPS (TURN WORD WRAP OFF FOR EASIER VIEW)
+          // STEPS (TURN WORD WRAP OFF TO VIEW AS TABLE)
 
-          //i             0              1                  2             3             4             5             6             7             8
-          //year
-          var dataYear =  [2021,         2021,              2021,         2021,         1977,         1994,         1995,         2010,         2010,         2011,         2020,         2021];
           //var dataTest =  [data_all_2021,         data_all_2021,              data_all_2021,         data75,         1995,         2010,         2010,         2011,         2021];
-          //map
-          var map =       ['FALSE',      'FALSE',           'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE',       'TRUE'];
-          //x
-          var xScales =   [xContScale,   xVoteScale,        xLonScaleLg,  xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale];
-          var xInputs =   ['cont_text',  'pres_marg_rep',   'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x'];
-          //y
-          var yScales =   [dummyScale,   dummyScale,        yLatScaleLg,  yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale];
-          var yInputs =   ['state_y',    'state_y',         'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y'];
-          //color
-          var cScales =   [color,        color,             color,        color,        color,        color,        color,        color,        color,        color,        color,        color];
-          var cInputs =   ['cont_text',  'cont_text',       'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text'];          
-          //size
-          var sScales =   [sizeChart,    sizeChart,         sizeChart,    sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap];
-          //var sInputs =   ['pop',        'pop',             'pop',        'pop',        'pop',        'pop',        'pop',        'pop',        'pop'];          
-          //force strs (x, y, collision)
-          var xStrs =     [0.1,          0.8,               0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1];
-          var yStrs =     [0.1,          0.1,               0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1];
-          var collStrs =  [1,            1,                 0,            0,            0,            0,            0,            0,            0,            0,            0,            0];
+
+
+          //i             0              1                  2             3             4             5             6             7             8             9             10            11            12
+          //year
+          var dataYear =  [2021,         2021,              2021,         2021,         1977,         1994,         1995,         2010,         2010,         2011,         2020,         2021,         2021        ];
+          // flags for showing/hiding content
+          var introFlag = [true,         false,             false,        false,        false,        false,        false,        false,        false,        false,        false,        false,        false       ];
+          var presFlag =  [false,        true,              false,        false,        false,        false,        false,        false,        false,        false,        false,        false,        false       ];
+          var mapFlag =   [false,        false,             true,         true,         true,         true,         true,         true,         true,         true,         true,         true,         false       ];
+          var mapLgFlag = [true,         true,              true,         false,        false,        false,        false,        false,        false,        false,        false,        false,        false       ];
+          var frcFlag =   [true,         true,              true,         true,         false,        false,        false,        false,        false,        false,        false,        false,        false       ];
+          var nonFrcFlag =[false,        false,             false,        false,        true,         true,         true,         true,         true,         true,         true,         true,         false       ];
+          var barFlag =   [false,        false,             false,        true,         true,         true,         true,         true,         true,         true,         true,         true,         true        ];
+          var yearFlag =  [false,        false,             false,        true,         true,         true,         true,         true,         true,         true,         true,         true,         false       ];
+          var appoFlag =  [false,        false,             false,        false,        false,        false,        false,        false,        false,        false,        false,        false,        true        ];
+          // bubble x
+          var xScales =   [xContScale,   xVoteScale,        xLonScaleLg,  xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale   ];
+          var xInputs =   ['cont_text',  'pres_marg_rep',   'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x'   ];
+          // bubble y
+          var yScales =   [dummyScale,   dummyScale,        yLatScaleLg,  yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale   ];
+          var yInputs =   ['state_y',    'state_y',         'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y'   ];
+          // bubble color
+          var cScales =   [color,        color,             color,        color,        color,        color,        color,        color,        color,        color,        color,        color,        color       ];
+          var cInputs =   ['cont_text',  'cont_text',       'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text' ];          
+          // bubble size
+          var sScales =   [sizeChart,    sizeChart,         sizeChart,    sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap     ];
+          // bubble x y strengths
+          var xStrs =     [0.1,          0.8,               0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1         ];
+          var yStrs =     [0.1,          0.1,               0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1         ];
+          // bubble collision strength
+          var collStrs =  [1,            1,                 0,            0,            0,            0,            0,            0,            0,            0,            0,            0,            0           ];
 
           // filter data to new year
           var newData = data_all
@@ -716,7 +751,7 @@ d3.queue()
           // for some reason selecting using variables results in elements not fading out if you scroll too fast, but d3.selectAll doesn't have this issue
 
           // show or hide header labels
-          if (i === 0) {
+          if (introFlag[i] === true) {
             d3.selectAll('.headerLabel').transition().style('opacity', 1);
             d3.selectAll('.number').transition().style('opacity', 1);
           } else {
@@ -725,7 +760,7 @@ d3.queue()
           }
 
           // show or hide pres vote axis and pres vote label
-          if (i === 1) {
+          if (presFlag[i] === true) {
             d3.selectAll('.axis').transition().style('opacity', 1);
             d3.selectAll('.presLabel').transition().style('opacity', 1);
           } else {
@@ -734,14 +769,14 @@ d3.queue()
           }
 
           // show or hide map
-          if (i < 2) {
-            d3.select('#basemap').style('opacity', 0);
-          } else {
+          if (mapFlag[i] === true) {
             d3.select('#basemap').style('opacity', 1);
+          } else {
+            d3.select('#basemap').style('opacity', 0);
           };
 
           // different map size for step 2
-          if (i === 2) {
+          if (mapLgFlag[i] === true) {
             d3.select('#basemap')
               .transition().duration(1000)
               .attr("width", mapWidthLg)
@@ -757,33 +792,50 @@ d3.queue()
           };
 
           // show or hide bar chart and node labels
-          if (i < 3) {
-            d3.selectAll('.nodeLabel').style('opacity', 1);
-            d3.selectAll('.yearLabel').style('opacity', 0);
-            d3.selectAll('.yearRect').style('opacity', 0);
-            d3.selectAll('.barRect').style('opacity', 0);
-            d3.selectAll('.barYear').style('opacity', 0);
-            d3.selectAll('.barTitle').style('opacity', 0);
-            d3.selectAll('.presName').style('opacity', 0);
-            d3.selectAll('.presLine').style('opacity', 0);
-          } else {
+          if (barFlag[i] === true) {
             d3.selectAll('.nodeLabel').style('opacity', 0);
-            d3.selectAll('.yearLabel').style('opacity', 0);
-            d3.selectAll('.yearRect').style('opacity', 1);
             d3.selectAll('.barRect').style('opacity', 1);
             d3.selectAll('.barYear').style('opacity', 1);
             d3.selectAll('.barTitle').style('opacity', 1);
             d3.selectAll('.presName').style('opacity', 1);
             d3.selectAll('.presLine').style('opacity', 1);
+          } else {
+            d3.selectAll('.nodeLabel').style('opacity', 1);
+            d3.selectAll('.barRect').style('opacity', 0);
+            d3.selectAll('.barYear').style('opacity', 0);
+            d3.selectAll('.barTitle').style('opacity', 0);
+            d3.selectAll('.presName').style('opacity', 0);
+            d3.selectAll('.presLine').style('opacity', 0);
           };
 
-          // show or hide nodes
-          if (i < 4) {
+          // show or hide bar chart and node labels
+          if (yearFlag[i] === true) {
+            d3.selectAll('.yearLabel').style('opacity', 0);
+            d3.selectAll('.yearRect').style('opacity', 1);
+          } else {
+            d3.selectAll('.yearLabel').style('opacity', 0);
+            d3.selectAll('.yearRect').style('opacity', 0);
+          };
+
+          // show or hide force nodes
+          if (frcFlag[i] === true) {
             d3.selectAll('.nodeForce').style('opacity', 1);
-            d3.selectAll('.nodeNonForce').style('opacity', 0);
           } else {
             d3.selectAll('.nodeForce').style('opacity', 0);
+          };
+
+          // show or hide non-force nodes
+          if (nonFrcFlag[i] === true) {
             d3.selectAll('.nodeNonForce').style('opacity', 1);
+          } else {
+            d3.selectAll('.nodeNonForce').style('opacity', 0);
+          };
+
+          // show or hide apportionment lines
+          if (appoFlag[i] === true) {
+            d3.selectAll('.appoLine').style('opacity', 1);
+          } else {
+            d3.selectAll('.appoLine').style('opacity', 0);
           };
 
           // update year label /// need to add interpolation transition effect

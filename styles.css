@@ -161,7 +161,7 @@ h1{
 
 .yearLabel{
   text-anchor: middle;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: bold;
 }
 
@@ -183,13 +183,14 @@ h1{
 }
 
 .presName{
-  font-size: 12px;
+  font-size: 10px;
   fill: #aaaaaa;
 }
 
 .barYear{
   text-anchor: middle;
   font-size: 13px;
+  /*fill: #aaaaaa;*/
 /*  font-weight: bold;
 */}
 
@@ -204,4 +205,10 @@ h1{
 
 .barTitleSpan{
   font-weight: bold;
+}
+
+.appoLine{
+  stroke: black;
+/*  stroke width set in charts.js
+  stroke-width: 3px;*/
 }
