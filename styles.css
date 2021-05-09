@@ -183,7 +183,7 @@ h1{
 }
 
 .presName{
-  font-size: 10px;
+  font-size: 11px;
   fill: #aaaaaa;
 }
 
@@ -191,8 +191,8 @@ h1{
   text-anchor: middle;
   font-size: 13px;
   /*fill: #aaaaaa;*/
-/*  font-weight: bold;
-*/}
+  font-weight: bold;
+}
 
 .barTitle{
   font-size: 15px;
@@ -204,7 +204,7 @@ h1{
 }
 
 .barTitleSpan{
-  font-weight: bold;
+  font-weight: normal;
 }
 
 .appoLine{

@@ -137,11 +137,11 @@ d3.queue()
     // color scale for control categories
     var color = d3.scaleOrdinal()
       .domain(contCats)
-      .range(['#0078c2', '#a8a8a8', '#d6422b', '#dddddd']);
+      .range(['#0078c2', '#b8b6b0', '#d6422b', '#bfbdb8']);
     /// bar chart colors need to be reversed for some reason, also split control uses lighter gray on bar chart
     var barColor = d3.scaleOrdinal()
       .domain(contCats)
-      .range(['#d6422b', '#cccccc', '#0078c2', '#dddddd']);
+      .range(['#d6422b', '#d1cfc9', '#0078c2', '#dddddd']);
       // .range(['#0078c2', '#92c5de', '#f4a582', '#d6422b', '#dddddd']);
       //.range(['#4393c3', '#92c5de', '#f4a582', '#d6604d', '#dddddd']);
 
@@ -310,7 +310,31 @@ d3.queue()
       .attr("y", barChartMargin.top - presMargin - 6)
       .style('opacity', 0);
 
-    var barTitle = g.append('g')
+    var barTitle = g.append('g');
+
+    var legendR = 5;
+
+    // add legend circles
+    barTitle.append('circle')
+      .attr('class', 'legendCircle')
+      .attr('cx', barChartMargin.left + 214)
+      .attr('cy', 43)
+      .attr('r', legendR)
+      .style('fill', '#0078c2');
+    barTitle.append('circle')
+      .attr('class', 'legendCircle')
+      .attr('cx', barChartMargin.left + 363)
+      .attr('cy', 43)
+      .attr('r', legendR)
+      .style('fill', '#d6422b');
+    barTitle.append('circle')
+      .attr('class', 'legendCircle')
+      .attr('cx', barChartMargin.left + 550)
+      .attr('cy', 43)
+      .attr('r', legendR)
+      .style('fill', '#bfbdb8');
+
+    barTitle
       .append("text")
       .attr('class', 'barTitle')
       .attr("x", barChartMargin.left)
@@ -321,51 +345,20 @@ d3.queue()
         .text("Population living in states with ")
       .append("tspan")
         .attr('class', 'barTitleSpan')
-        .text("Democrat trifectas")
-        .style('fill', '#0078c2')
-      .append("tspan")
-        .attr('class', 'barTitleSpanNormal')
-        .text(", ")
+        .attr('dx', 3 * legendR + 1)
+        .text("Democrat trifectas, ")
         .style('fill', '#000000')
       .append("tspan")
         .attr('class', 'barTitleSpan')
-        .text("Republican trifectas")
-        .style('fill', '#d6422b')
-      .append("tspan")
-        .attr('class', 'barTitleSpanNormal')
-        .text(", and ")
+        .attr('dx', 3 * legendR + 1)
+        .text("Republican trifectas, and ")
         .style('fill', '#000000')
       .append("tspan")
         .attr('class', 'barTitleSpan')
-        .text("split control")      // .style('fill', d=>)
-        .style('fill', '#999999');
+        .attr('dx', 3 * legendR + 1)
+        .text("split control")
+        .style('fill', '#000000');
 
-    // var barLabel = g.append('g')
-    //   .selectAll(".barLabel")
-    //   .data([ 
-    //           "Democrat trifecta",
-    //           "split control",
-    //           "Republican trifecta"])
-    //   // [ "Population in states with Democrat trifectas",
-    //   //         "Population in states with split control",
-    //   //         "Population in states with Republican trifectas"]
-    //   .enter().append("text")
-    //   .attr('class', 'barLabel')
-    //   .text(d=> d)
-    //   .attr("x", barChartWidth + barChartMargin.left + 10)
-    //   .attr("y", (d,i)=> (i + 1) * 47 + barChartMargin.top)
-    //   // .style('fill', d=>)
-    //   .style('opacity', 1);
-
-    // var barLabelFirst = g.append('g')
-    //   .selectAll(".barLabelFirst")
-    //   .data(["Population living", "in a state with..."])
-    //   .enter().append("text")
-    //   .attr('class', 'barLabelFirst')
-    //   .text(d=> d)
-    //   .attr("x", barChartWidth + barChartMargin.left + 10)
-    //   .attr("y", (d,i)=> i * 17 + barChartMargin.top - 17)
-    //   .style('opacity', 1);
 
     // APPORTIONMENT LINES
 
@@ -698,35 +691,35 @@ d3.queue()
           //var dataTest =  [data_all_2021,         data_all_2021,              data_all_2021,         data75,         1995,         2010,         2010,         2011,         2021];
 
 
-          //i             0              1                  2             3             4             5             6             7             8             9             10            11            12
+          //i             0              1                  2             3             4             5             6             7             8             9             10            11            
           //year
-          var dataYear =  [2021,         2021,              2021,         2021,         1977,         1994,         1995,         2010,         2010,         2011,         2020,         2021,         2021        ];
+          var dataYear =  [2021,         2021,              2021,         2021,         1977,         1994,         1995,         2010,         2011,         2020,         2021,         2021        ];
           // flags for showing/hiding content
-          var introFlag = [true,         false,             false,        false,        false,        false,        false,        false,        false,        false,        false,        false,        false       ];
-          var presFlag =  [false,        true,              false,        false,        false,        false,        false,        false,        false,        false,        false,        false,        false       ];
-          var mapFlag =   [false,        false,             true,         true,         true,         true,         true,         true,         true,         true,         true,         true,         false       ];
-          var mapLgFlag = [true,         true,              true,         false,        false,        false,        false,        false,        false,        false,        false,        false,        false       ];
-          var frcFlag =   [true,         true,              true,         true,         false,        false,        false,        false,        false,        false,        false,        false,        false       ];
-          var nonFrcFlag =[false,        false,             false,        false,        true,         true,         true,         true,         true,         true,         true,         true,         false       ];
-          var barFlag =   [false,        false,             false,        true,         true,         true,         true,         true,         true,         true,         true,         true,         true        ];
-          var yearFlag =  [false,        false,             false,        true,         true,         true,         true,         true,         true,         true,         true,         true,         false       ];
-          var appoFlag =  [false,        false,             false,        false,        false,        false,        false,        false,        false,        false,        false,        false,        true        ];
+          var introFlag = [true,         false,             false,        false,        false,        false,        false,        false,        false,        false,        false,        false       ];
+          var presFlag =  [false,        true,              false,        false,        false,        false,        false,        false,        false,        false,        false,        false       ];
+          var mapFlag =   [false,        false,             true,         true,         true,         true,         true,         true,         true,         true,         true,         false       ];
+          var mapLgFlag = [true,         true,              true,         false,        false,        false,        false,        false,        false,        false,        false,        false       ];
+          var frcFlag =   [true,         true,              true,         true,         false,        false,        false,        false,        false,        false,        false,        false       ];
+          var nonFrcFlag =[false,        false,             false,        false,        true,         true,         true,         true,         true,         true,         true,         false       ];
+          var barFlag =   [false,        false,             false,        true,         true,         true,         true,         true,         true,         true,         true,         true        ];
+          var yearFlag =  [false,        false,             false,        true,         true,         true,         true,         true,         true,         true,         true,         false       ];
+          var appoFlag =  [false,        false,             false,        false,        false,        false,        false,        false,        false,        false,        false,        true        ];
           // bubble x
-          var xScales =   [xContScale,   xVoteScale,        xLonScaleLg,  xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale   ];
-          var xInputs =   ['cont_text',  'pres_marg_rep',   'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x'   ];
+          var xScales =   [xContScale,   xVoteScale,        xLonScaleLg,  xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale,    xLonScale   ];
+          var xInputs =   ['cont_text',  'pres_marg_rep',   'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x',    'state_x'   ];
           // bubble y
-          var yScales =   [dummyScale,   dummyScale,        yLatScaleLg,  yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale   ];
-          var yInputs =   ['state_y',    'state_y',         'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y'   ];
+          var yScales =   [dummyScale,   dummyScale,        yLatScaleLg,  yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale,    yLatScale   ];
+          var yInputs =   ['state_y',    'state_y',         'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y',    'state_y'   ];
           // bubble color
-          var cScales =   [color,        color,             color,        color,        color,        color,        color,        color,        color,        color,        color,        color,        color       ];
-          var cInputs =   ['cont_text',  'cont_text',       'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text' ];          
+          var cScales =   [color,        color,             color,        color,        color,        color,        color,        color,        color,        color,        color,        color       ];
+          var cInputs =   ['cont_text',  'cont_text',       'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text',  'cont_text' ];          
           // bubble size
-          var sScales =   [sizeChart,    sizeChart,         sizeChart,    sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap     ];
+          var sScales =   [sizeChart,    sizeChart,         sizeChart,    sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap     ];
           // bubble x y strengths
-          var xStrs =     [0.1,          0.8,               0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1         ];
-          var yStrs =     [0.1,          0.1,               0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1         ];
+          var xStrs =     [0.1,          0.8,               0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1         ];
+          var yStrs =     [0.1,          0.1,               0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1         ];
           // bubble collision strength
-          var collStrs =  [1,            1,                 0,            0,            0,            0,            0,            0,            0,            0,            0,            0,            0           ];
+          var collStrs =  [1,            1,                 0,            0,            0,            0,            0,            0,            0,            0,            0,            0           ];
 
           // filter data to new year
           var newData = data_all
@@ -797,6 +790,7 @@ d3.queue()
             d3.selectAll('.barRect').style('opacity', 1);
             d3.selectAll('.barYear').style('opacity', 1);
             d3.selectAll('.barTitle').style('opacity', 1);
+            d3.selectAll('.legendCircle').style('opacity', 1);
             d3.selectAll('.presName').style('opacity', 1);
             d3.selectAll('.presLine').style('opacity', 1);
           } else {
@@ -804,6 +798,7 @@ d3.queue()
             d3.selectAll('.barRect').style('opacity', 0);
             d3.selectAll('.barYear').style('opacity', 0);
             d3.selectAll('.barTitle').style('opacity', 0);
+            d3.selectAll('.legendCircle').style('opacity', 0);
             d3.selectAll('.presName').style('opacity', 0);
             d3.selectAll('.presLine').style('opacity', 0);
           };
@@ -833,9 +828,9 @@ d3.queue()
 
           // show or hide apportionment lines
           if (appoFlag[i] === true) {
-            d3.selectAll('.appoLine').style('opacity', 1);
+            d3.selectAll('.appoLine').transition().duration(750).style('opacity', 1);
           } else {
-            d3.selectAll('.appoLine').style('opacity', 0);
+            d3.selectAll('.appoLine').transition().duration(750).style('opacity', 0);
           };
 
           // update year label /// need to add interpolation transition effect
