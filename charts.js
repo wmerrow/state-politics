@@ -1,7 +1,3 @@
-function log(something) {
-  console.log(something);
-};
-
 d3.queue()
 .defer(d3.csv, "data/output/party_control.csv")
 .defer(d3.csv, "data/output/party_control_aggregated.csv")
@@ -10,17 +6,13 @@ d3.queue()
   if (error) throw error;
 
   // metadata for party control
-  var contCats = ['full_dem', 'split', 'full_rep', 'NA'];
-  var contText = ['Democrat trifecta', 'Split control', 'Republican trifecta', 'Other'];
-  var contPositions = [0.25, 0.5, 0.75, 0.5];
-  var contOrder = [3, 2, 1, 4]; // custom order to use in sorting for stacked bar chart
+  var contCats = ['full_dem', 'split', 'full_rep'];
+  var contText = ['Democrat trifecta', 'Split control', 'Republican trifecta'];
+  var contPositions = [0.25, 0.5, 0.75];
+  var contOrder = [3, 2, 1]; // custom order to use in sorting for stacked bar chart
   // object with control metadata to use for lookup
   var contMeta = {};
   contCats.forEach((key, i) => contMeta[key] = {"text": contText[i], "position": contPositions[i], "order": contOrder[i]});
-
-  /// remove nebraska for now - Need to confirm Nebraska control to remove these two lines
-  var data_all = data_all.filter(({state}) => state !== "Nebraska");
-  var data_all_ag = data_all_ag.filter(({cont_text}) => cont_text !== "NA");
 
   // convert columns to numeric
   data_all.forEach(function(data){
@@ -101,7 +93,6 @@ d3.queue()
 
     // DIMENSIONS
 
-    // 700 x 440 is roughly the map aspect ratio so bubbles end up centered in states
     var scalar = 1.37; // scalar also applied to bubble size scales
     var width = 700 * scalar;
     var mapAspect = 582.5 / 918.4; // map aspect ratio
@@ -139,7 +130,7 @@ d3.queue()
     var nodePadding = 1;
     var strokeWidth = 3; // stroke for highlight rect and lines
 
-    // data min and max
+    // data min and max for scales
     var pop_max = d3.max(data_all_2021, function(d) { return d.pop; });
     var pop_min = d3.min(data_all_2021, function(d) { return d.pop; });
     var marg_rep_max = d3.max(data_all_2021, function(d) { return d.pres_marg_rep; });
@@ -167,10 +158,10 @@ d3.queue()
     // size scales
     var sizeChart = d3.scaleSqrt()
       .domain([0, pop_max])
-      .range([0, 30 * scalar]); // max radius for charts
+      .range([0, 30 * scalar]); // max radius for force charts and large map
     var sizeMap = d3.scaleSqrt()
       .domain([0, pop_max])
-      .range([0, 11 * scalar]); // max radius for map
+      .range([0, 9 * scalar]); // max radius for small map
     var sizeText = d3.scaleLinear()
       .domain([pop_min, (pop_max - pop_min) / 2]) // max domain is pop midpoint
       .range([8, 12]) // min and max font size
@@ -230,7 +221,6 @@ d3.queue()
       .attr("x", mapMargin.left)
       .attr("y", mapMargin.top)
       .style('opacity', 0);
-      // .style('display', 'none'); //margin.top);
 
     // add g after basemap so it goes on top
     var g = svg.append('g');
@@ -238,7 +228,7 @@ d3.queue()
 
     // PRESIDENTIAL VOTE AXIS
 
-    //add axis
+    // add axis
     var axisHeight = height * 0.47;
     var presAxis = g.append("g")
       .attr("class", "axis")
@@ -246,7 +236,7 @@ d3.queue()
       .call(d3.axisTop(xVoteScale)
               .ticks(10)
               .tickSize(axisHeight)
-              // remove minus signs and append +D or +R, or change to Even
+              // remove minus signs and append +D or +R, or change to 'Even'
               .tickFormat((function (v) {
                   if (v == 0) {
                     return 'Even';
@@ -432,7 +422,7 @@ d3.queue()
       };
 
       // update non-force nodes' color, position, and size (just using x and y, not force layout) for relevant steps
-      // using mapFlag instead of nonFrcFlag means they will update even if their opacity is 0
+      // using mapFlag instead of nonFrcFlag so they update for earlier step even though opacity is 0
       if (mapFlag === true) {
 
         // Apply the general update pattern to the nodes
@@ -457,7 +447,7 @@ d3.queue()
               return 1.5;
             }
           })
-          // need to change stroke-width before transition for some reason
+          // need to change stroke-width before transition
           .transition(t)
           .style("fill", d=> cScale(d[cInput]))
           .attr("r", d=> sScale(d.pop))
@@ -537,7 +527,6 @@ d3.queue()
     var barYearAxis = g.append('g')
       .selectAll(".presName")
       .data([1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020])
-      //.data([1980, 1984, 1988, 1992, 1996, 2000, 2004, 2008, 2012, 2016, 2020])
       .enter().append("text")
       .attr('class', 'barYearAxis')
       .text(d=> d)
@@ -558,7 +547,7 @@ d3.queue()
         if (d.president === "Biden") {
           return xYearScale(d.end_year) + xYearScale.bandwidth();
         } else {
-          return xYearScale(d.end_year) - 2;
+          return xYearScale(d.end_year) - 3;
       }})
       .attr("y1", barChartMargin.top - presMargin)
       .attr("y2", barChartMargin.top - presMargin)
@@ -632,12 +621,8 @@ d3.queue()
       .append("tspan")
         .attr('dx', 3 * legendR + 1)
         .text("split control")
-
-
-    // APPORTIONMENT LINES
-
+    // apportionment lines
     var appoYears = [1980, 1990, 2000, 2010, 2020];
-
     var appoLines = g.append('g')
       .selectAll(".appoLine")
       .data(appoYears)
@@ -709,9 +694,6 @@ d3.queue()
           
           // STEPS (TURN WORD WRAP OFF TO VIEW AS TABLE)
 
-          //var dataTest =  [data_all_2021,         data_all_2021,              data_all_2021,         data75,         1995,         2010,         2010,         2011,         2021];
-
-
           //i             0              1                  2             3             4             5             6             7             8             9             10            11            
           //year
           var dataYear =  [2021,         2021,              2021,         2021,         1977,         1994,         1995,         2010,         2011,         2020,         2021,         2021        ];
@@ -739,7 +721,7 @@ d3.queue()
           var sScales =   [sizeChart,    sizeChart,         sizeChart,    sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap,      sizeMap     ];
           // bubble x y strengths
           var xStrs =     [0.11,         1,                 0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1         ];
-          var yStrs =     [0.08,         0.05,              0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1         ];
+          var yStrs =     [0.08,         0.04,              0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1,          0.1         ];
           // bubble collision strength
           var collStrs =  [1,            1,                 0,            0,            0,            0,            0,            0,            0,            0,            0,            0           ];
 
@@ -765,8 +747,7 @@ d3.queue()
                        mapFlag[i],
                        bar1Flag[i]);
 
-          // show and hide elements as needed
-          // selecting using variables results in elements not fading out if you scroll too fast, but d3.selectAll doesn't have this issue
+          // show and hide elements as needed (selecting using variables results in elements not fading out if you scroll too fast, but d3.selectAll doesn't have this issue)
 
           // show or hide header labels
           if (introFlag[i] === true) {
